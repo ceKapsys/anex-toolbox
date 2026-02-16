@@ -36,6 +36,30 @@ app.get('/', (req, res) => {
     res.send('ANEX Tools API Running');
 });
 
+// Debug Route to check DB connection
+app.get('/api/debug/db-check', async (req, res) => {
+    try {
+        const prisma = require('./lib/prisma');
+        const userCount = await prisma.adminUser.count();
+        const clientCount = await prisma.client.count();
+        res.json({
+            status: 'ok',
+            message: 'Database Connected',
+            userCount,
+            clientCount,
+            env: process.env.NODE_ENV
+        });
+    } catch (err) {
+        console.error('DB Check Failed:', err);
+        res.status(500).json({
+            status: 'error',
+            message: 'Database Connection Failed',
+            error: err.message,
+            stack: err.stack
+        });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
