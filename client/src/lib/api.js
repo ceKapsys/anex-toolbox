@@ -1,11 +1,11 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const request = async (endpoint, options = {}) => {
     const url = `${API_URL}${endpoint}`;
-    
+
     // Get session ID from localStorage
     const sessionId = localStorage.getItem('sessionId');
-    
+
     const headers = {
         'Content-Type': 'application/json',
         ...(sessionId && { 'x-session-id': sessionId }),
@@ -21,13 +21,13 @@ const request = async (endpoint, options = {}) => {
         const response = await fetch(url, config);
         if (!response.ok) {
             const errorBody = await response.json().catch(() => ({}));
-            
+
             // If unauthorized, redirect to login
             if (response.status === 401) {
                 localStorage.removeItem('sessionId');
                 window.location.href = '/login';
             }
-            
+
             throw new Error(errorBody.error || `Request failed: ${response.statusText}`);
         }
         return await response.json();
