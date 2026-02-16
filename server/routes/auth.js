@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const authRepository = require('../repositories/AuthRepository');
+const prisma = require('../lib/prisma'); // For update last_login if not in repo, or use repo's update
 
 // Helper function to generate session ID
 const generateSessionId = () => {
@@ -24,95 +25,97 @@ const isAuthenticated = async (req, res, next) => {
         return res.status(401).json({ error: 'No session provided', authenticated: false });
     }
 
-    const sql = `
-        SELECT s.*, u.id as user_id, u.username, u.email, u.full_name 
-        FROM sessions s 
-        JOIN admin_users u ON s.user_id = u.id 
-        WHERE s.id = ? AND datetime(s.expires_at) > datetime('now')
-    `;
-
-    db.get(sql, [sessionId], (err, session) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
+    try {
+        const session = await authRepository.findSessionById(sessionId);
 
         if (!session) {
-            return res.status(401).json({ error: 'Invalid or expired session', authenticated: false });
+            return res.status(401).json({ error: 'Invalid session', authenticated: false });
+        }
+
+        // Check expiry
+        if (new Date(session.expires_at) < new Date()) {
+            await authRepository.deleteSession(sessionId);
+            return res.status(401).json({ error: 'Session expired', authenticated: false });
+        }
+
+        if (!session.user) {
+            // Should not happen due to referential integrity, but safety check
+            return res.status(401).json({ error: 'Invalid session user', authenticated: false });
         }
 
         req.user = {
-            id: session.user_id,
-            username: session.username,
-            email: session.email,
-            full_name: session.full_name
+            id: session.user.id,
+            username: session.user.username,
+            email: session.user.email,
+            full_name: session.user.full_name
         };
         req.sessionId = sessionId;
         next();
-    });
+    } catch (err) {
+        console.error('Auth Middleware Error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    db.get("SELECT * FROM admin_users WHERE username = ?", [username], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
+    try {
+        const user = await authRepository.findByUsername(username);
 
         if (!user) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
-        bcrypt.compare(password, user.password_hash, (err, isMatch) => {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
+        const isMatch = await bcrypt.compare(password, user.password_hash);
 
-            if (!isMatch) {
-                return res.status(401).json({ error: 'Invalid username or password' });
-            }
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
 
-            // Create session
-            const sessionId = generateSessionId();
-            const expiresAt = getSessionExpiry();
+        // Create session
+        const sessionId = generateSessionId();
+        const expiresAt = getSessionExpiry();
 
-            const insertSession = `INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`;
-            db.run(insertSession, [sessionId, user.id, expiresAt], (err) => {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-
-                // Update last login
-                db.run("UPDATE admin_users SET last_login = datetime('now') WHERE id = ?", [user.id]);
-
-                res.json({
-                    message: 'Login successful',
-                    sessionId: sessionId,
-                    user: {
-                        id: user.id,
-                        username: user.username,
-                        email: user.email,
-                        full_name: user.full_name
-                    }
-                });
-            });
+        await authRepository.createSession({
+            id: sessionId,
+            user_id: user.id,
+            expires_at: expiresAt
         });
-    });
+
+        // Update last login
+        await authRepository.update(user.id, { last_login: new Date() });
+
+        res.json({
+            message: 'Login successful',
+            sessionId: sessionId,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name
+            }
+        });
+    } catch (err) {
+        console.error('Login Error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // POST /api/auth/logout
-router.post('/logout', isAuthenticated, (req, res) => {
-    db.run("DELETE FROM sessions WHERE id = ?", [req.sessionId], (err) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
+router.post('/logout', isAuthenticated, async (req, res) => {
+    try {
+        await authRepository.deleteSession(req.sessionId);
         res.json({ message: 'Logout successful' });
-    });
+    } catch (err) {
+        console.error('Logout Error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // GET /api/auth/verify
@@ -124,7 +127,7 @@ router.get('/verify', isAuthenticated, (req, res) => {
 });
 
 // POST /api/auth/change-password (authenticated users only)
-router.post('/change-password', isAuthenticated, (req, res) => {
+router.post('/change-password', isAuthenticated, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
@@ -135,44 +138,40 @@ router.post('/change-password', isAuthenticated, (req, res) => {
         return res.status(400).json({ error: 'New password must be at least 6 characters' });
     }
 
-    db.get("SELECT password_hash FROM admin_users WHERE id = ?", [req.user.id], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    try {
+        const user = await authRepository.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        bcrypt.compare(currentPassword, user.password_hash, (err, isMatch) => {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
+        const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
 
-            if (!isMatch) {
-                return res.status(401).json({ error: 'Current password is incorrect' });
-            }
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
 
-            bcrypt.hash(newPassword, 10, (err, hash) => {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
+        const hash = await bcrypt.hash(newPassword, 10);
 
-                db.run("UPDATE admin_users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?",
-                    [hash, req.user.id],
-                    (err) => {
-                        if (err) {
-                            return res.status(500).json({ error: err.message });
-                        }
-                        res.json({ message: 'Password changed successfully' });
-                    }
-                );
-            });
+        await authRepository.update(user.id, {
+            password_hash: hash,
+            updated_at: new Date()
         });
-    });
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (err) {
+        console.error('Change Password Error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Clean up expired sessions periodically
-setInterval(() => {
-    db.run("DELETE FROM sessions WHERE datetime(expires_at) <= datetime('now')", (err) => {
-        if (err) console.error('Error cleaning up sessions:', err);
-    });
+setInterval(async () => {
+    try {
+        await authRepository.deleteExpiredSessions();
+    } catch (err) {
+        console.error('Error cleaning up sessions:', err);
+    }
 }, 3600000); // Run every hour
 
 module.exports = { router, isAuthenticated };
