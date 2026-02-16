@@ -17,44 +17,17 @@ const getSessionExpiry = () => {
     return expiry.toISOString();
 };
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated (Bypassed for Auto-Login)
 const isAuthenticated = async (req, res, next) => {
-    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
-
-    if (!sessionId) {
-        return res.status(401).json({ error: 'No session provided', authenticated: false });
-    }
-
-    try {
-        const session = await authRepository.findSessionById(sessionId);
-
-        if (!session) {
-            return res.status(401).json({ error: 'Invalid session', authenticated: false });
-        }
-
-        // Check expiry
-        if (new Date(session.expires_at) < new Date()) {
-            await authRepository.deleteSession(sessionId);
-            return res.status(401).json({ error: 'Session expired', authenticated: false });
-        }
-
-        if (!session.user) {
-            // Should not happen due to referential integrity, but safety check
-            return res.status(401).json({ error: 'Invalid session user', authenticated: false });
-        }
-
-        req.user = {
-            id: session.user.id,
-            username: session.user.username,
-            email: session.user.email,
-            full_name: session.user.full_name
-        };
-        req.sessionId = sessionId;
-        next();
-    } catch (err) {
-        console.error('Auth Middleware Error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+    // Auto-login mock user
+    req.user = {
+        id: 1,
+        username: 'emamul.haque@anexbusiness.com',
+        email: 'emamul.haque@anexbusiness.com',
+        full_name: 'Anex Admin'
+    };
+    req.sessionId = 'auto-generated-session';
+    next();
 };
 
 // POST /api/auth/login
