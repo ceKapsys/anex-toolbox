@@ -1,6 +1,6 @@
 /**
  * Invoice Print Stylesheet
- * Ported from pdf-gen.php inline styles
+ * Float-Based Layout for Maximum Compatibility with html2canvas
  */
 
 /* Force A4 size for PDF generation */
@@ -13,90 +13,107 @@ body {
     margin: 0;
     padding: 0;
     background: #f3f4f6;
-    font-family: 'Trebuchet MS', Arial, Helvetica, sans-serif;
+    /* Gray background for web view */
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-scheme: only light;
+    /* Force light mode to avoid dark mode OKLCH vars */
 }
 
 .anex-page {
     width: 210mm;
-    /* A4 Width */
-    min-height: 297mm;
-    /* A4 Height */
+    min-height: 296mm;
+    /* Slightly less than 297mm to prevent overflow */
+    max-height: 296mm;
+    /* Force single page height */
+    overflow: hidden;
+    /* Clip any potential overflow */
     padding: 40px 30px;
     background: #fff;
     margin: 0 auto;
     box-sizing: border-box;
-    font-family: 'Trebuchet MS', Arial, Helvetica, sans-serif;
-    color: #111;
-    page-break-after: auto;
     position: relative;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    color: #111;
 }
 
-@media print {
-    .anex-page {
-        margin: 0;
-        box-shadow: none;
-        width: 100%;
-        height: auto;
-    }
+/* --- Utilities --- */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.text-center {
+    text-align: center;
 }
 
 .content-section {
+    margin-bottom: 20px;
+    margin-bottom: 20px;
     page-break-inside: avoid;
+    overflow: hidden;
+    /* Clearfix behavior */
 }
 
-.anex-row {
-    display: flex;
-    gap: 15px;
-}
-
+/* --- Header Section --- */
 .header-grid {
-    display: grid;
-    grid-template-columns: 25% 50% 25%;
-    align-items: flex-start;
-    margin-bottom: 16px;
+    width: 100%;
+    margin-bottom: 20px;
+    overflow: hidden;
+    /* Clearfix */
+}
+
+.logo-box {
+    float: left;
+    width: 30%;
 }
 
 .logo-box img {
-    max-width: 140px;
+    max-width: 150px;
     max-height: 80px;
     object-fit: contain;
 }
 
 .center-stack {
+    float: left;
+    width: 40%;
     text-align: center;
-    line-height: 1.3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    padding-top: 10px;
 }
 
 .gov-text {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.3px;
     text-transform: uppercase;
+    line-height: 1.4;
+    margin-bottom: 3px;
 }
 
 .tag-box {
     border: 1px solid #000;
-    padding: 6px 10px;
+    padding: 5px 12px;
     font-weight: 700;
+    font-size: 11px;
     display: inline-block;
-    font-size: 12px;
+    vertical-align: middle;
+    margin-top: 5px;
 }
 
 .right-tag {
+    float: right;
+    width: 30%;
     text-align: right;
+    padding-top: 10px;
 }
 
+/* --- Registered Business Info --- */
 .section {
     border: 1px solid #111;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 14px;
-    background: transparent;
+    margin-bottom: 20px;
+    clear: both;
 }
 
 .section-head {
@@ -105,47 +122,91 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     font-size: 11px;
-    padding: 6px 8px;
-    letter-spacing: 0.2px;
+    padding: 6px;
+    border-bottom: 1px solid #111;
+    color: #000;
 }
 
 .section-body {
     padding: 10px;
     font-size: 11px;
     line-height: 1.5;
-}
-
-.section.body-center {
-    text-align: center;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: 120px 6px 1fr;
-    row-gap: 3px;
-    align-items: flex-start;
-    font-size: 10px;
+    text-align: left;
 }
 
 .label {
     font-weight: 700;
     color: #374151;
-    font-size: 10px;
-}
-
-.sep {
-    text-align: center;
-    font-weight: 700;
 }
 
 .val {
     font-weight: 700;
-    color: #111;
+    color: #000;
+    margin-left: 5px;
+}
+
+/* --- Buyer & Invoice Info (Dual Column) --- */
+.anex-row {
+    width: 100%;
+    overflow: hidden;
+    /* Clearfix */
+    margin-bottom: 20px;
+}
+
+/* 
+   We target .section classes directly inside a wrapper or use specific classes
+   To be safe, we will use specific classes for left/right columns 
+*/
+
+.col-left {
+    float: left;
+    width: 49%;
+}
+
+.col-right {
+    float: right;
+    width: 49%;
+}
+
+.col-left .section,
+.col-right .section {
+    margin-bottom: 0;
+    /* Remove bottom margin inside columns */
+}
+
+/* Info Grid Table Structure (still good for aligned text) */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table td {
+    padding: 2px 0;
+    vertical-align: top;
     font-size: 10px;
 }
 
+.info-label-cell {
+    width: 35%;
+    font-weight: 700;
+    color: #374151;
+}
+
+.info-sep-cell {
+    width: 2%;
+    text-align: center;
+    font-weight: 700;
+}
+
+.info-val-cell {
+    font-weight: 700;
+    color: #000;
+}
+
+/* --- Item Table --- */
 .table-wrap {
-    margin: 14px 0 10px;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
 table.inv-table {
@@ -157,212 +218,257 @@ table.inv-table {
 .inv-table th,
 .inv-table td {
     border: 1px solid #111;
-    padding: 6px;
+    padding: 6px 4px;
 }
 
 .num-row th {
-    padding: 3px;
+    background: #fff;
+    /* Plain white for numbers row per image? Or gray? Image shows white/gray. stick to gray for now */
+    background: #f3f4f6;
+    text-align: center;
     font-weight: 600;
-    background: #f5f5f5;
+    padding: 3px;
 }
 
 .hdr-row th {
     background: #e5e7eb;
+    text-align: center;
     font-weight: 700;
+    vertical-align: middle;
 }
 
 .cell {
-    text-align: center;
+    vertical-align: middle;
 }
 
-.cell.text {
-    text-align: left;
+.cell.center {
+    text-align: center;
 }
 
 .cell.right {
     text-align: right;
 }
 
+.cell.left {
+    text-align: left;
+}
+
 .cell.bold {
     font-weight: 700;
 }
 
-.tfoot-row td {
-    padding: 6px;
-}
-
-.totals-bar {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    font-weight: 700;
-    font-size: 10px;
-    align-items: center;
-}
-
-.totals-pill {
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 999px;
-    padding: 6px 10px;
-}
-
+/* --- Totals & Words --- */
 .words {
     font-size: 11px;
     font-weight: 700;
     font-style: italic;
-    margin: 12px 0 16px;
+    margin: 15px 0;
+}
+
+/* --- Math Row (centered calculation) --- */
+.math-container {
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
 .math-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin: 12px 0 18px;
-    font-size: 11px;
-    font-weight: 700;
+    display: inline-block;
+    /* container for the whole line */
+}
+
+.math-item {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 5px;
+    text-align: center;
 }
 
 .math-box {
     border: 1px solid #111;
-    border-radius: 6px;
-    width: 120px;
-    text-align: center;
+    width: 130px;
+    /* Fixed width */
 }
 
-.math-box div {
-    padding: 6px 8px;
-}
-
-.math-box .math-head {
+.math-head {
     background: #f3f4f6;
     border-bottom: 1px solid #111;
     font-size: 10px;
     font-weight: 700;
+    padding: 5px;
 }
 
-.adjustment-note {
-    background: #fef3c7;
-    border: 1px solid #fcd34d;
-    border-radius: 6px;
-    padding: 8px 10px;
-    margin: 12px 0;
-    font-size: 10px;
-    color: #92400e;
-    font-weight: 600;
-    line-height: 1.4;
+.math-val {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px;
 }
 
+.math-op {
+    font-weight: 800;
+    font-size: 16px;
+}
+
+/* --- Pay Bar --- */
 .pay-bar {
-    background: #0f172a;
+    background: #111827;
     color: #fff;
     text-align: center;
-    font-weight: 700;
     padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 16px;
+    border-radius: 4px;
+    font-weight: 700;
     font-size: 12px;
+    margin-bottom: 20px;
+    clear: both;
 }
 
+/* --- Terms --- */
 .terms {
     border: 1px solid #111;
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 12px;
-    font-size: 11px;
-    line-height: 1.6;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
+    font-size: 10px;
+    line-height: 1.5;
 }
 
 .terms h3 {
-    margin: 0 0 6px;
-    font-size: 12px;
+    margin: 0 0 5px;
+    font-size: 11px;
     text-decoration: underline;
+    font-weight: 700;
 }
 
-.payment-card {
+.terms ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+/* New classes for terms list styling */
+.terms-list-ul {
+    margin-left: 20px;
+    line-height: 1.6;
+}
+
+.terms-text-container {
+    white-space: pre-line;
+}
+
+/* --- Payment Method Footer --- */
+.payment-section {
+    width: 100%;
     border: 1px solid #111;
-    border-radius: 10px;
+    border-radius: 8px;
+    /* Rounded corners for the container */
     overflow: hidden;
-    margin-bottom: 14px;
+    /* Clips children to rounded corners */
+    margin-bottom: 10px;
+    background: #fff;
 }
 
 .payment-head {
     background: #dbeafe;
+    /* Light blue */
+    padding: 8px;
     text-align: center;
     font-weight: 700;
-    padding: 8px;
     font-size: 11px;
     text-transform: uppercase;
+    border-bottom: 1px solid #111;
 }
 
 .payment-body {
-    display: flex;
-    align-items: stretch;
+    width: 100%;
+    /* We use overflow hidden to contain floats */
+    overflow: hidden;
 }
 
-.bank-logo {
-    width: 80px;
+.bank-left {
+    float: left;
+    width: 25%;
+    /* Left side for the red box */
+    /* No border right needed if we fill background? */
+}
+
+/* Red Box Style for Bank Name */
+.bank-logo-box {
+    background: #fff;
+    /* White background as per user update */
+    color: #111;
+    /* Dark text for fallback */
+    text-align: left;
+    /* Image/text alignment */
+    padding: 15px;
+    /* Padding for height */
+    height: 100%;
+    /* Ideally full height */
+    min-height: 60px;
+    /* Ensure visual height */
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    padding: 8px;
     box-sizing: border-box;
+    border-right: 1px solid #111;
+    /* Add border to separate from dark right side */
 }
 
-.bank-logo img {
-    max-width: 100%;
+.bank-logo-box img {
+    max-width: 80px;
     max-height: 40px;
     object-fit: contain;
 }
 
-.bank-logo.text {
+.bank-logo-text {
     font-weight: 800;
     font-size: 14px;
-    border-right: 1px solid #111;
-    background: #f9fafb;
+    line-height: 1.2;
 }
 
-.bank-details {
-    flex: 1;
-    background: #111827;
-    color: #fff;
-    padding: 10px;
+.bank-right {
+    float: left;
+    width: 75%;
+    background: #fff;
+    color: #111;
+    padding: 12px 15px;
+    box-sizing: border-box;
     font-size: 10px;
-    display: grid;
-    row-gap: 4px;
+    min-height: 60px;
 }
 
-.bank-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: nowrap;
+.bank-info-line {
+    margin-bottom: 4px;
 }
 
 .bank-label {
+    color: #6b7280;
     font-weight: 700;
     text-transform: uppercase;
+    margin-right: 5px;
     font-size: 9px;
-    color: #cbd5e1;
-    white-space: nowrap;
 }
 
 .bank-val {
     font-weight: 700;
-    white-space: nowrap;
+    color: #111;
+    margin-right: 15px;
 }
 
-.bank-sep {
-    color: #cbd5e1;
-    font-weight: 700;
+.bank-pipe {
+    color: #6b7280;
+    margin: 0 5px;
 }
 
+/* --- Footer Note --- */
 .foot-note {
     text-align: center;
-    font-size: 10px;
-    color: #4b5563;
-    margin-top: 8px;
+    font-size: 9px;
+    color: #666;
+    margin-top: 10px;
     line-height: 1.4;
+    clear: both;
+}
+
+.contact-email-link {
+    color: #2563eb;
+    font-weight: 700;
 }

@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id          Int      @id @default(autoincrement())
+  client_code String?  @unique
+  name        String?
+  company     String?
+  address     String?
+  bin         String?
+  email       String?
+  phone       String?
+  logo        String?
+  attn        String?
+  created_at  DateTime @default(now())
+
+  @@map("clients")
+}
+
+model Invoice {
+  id                Int      @id @default(autoincrement())
+  invoice_no        String?
+  invoice_type      String?
+  service_id        Int?
+  client_id         Int?
+  client_snapshot   String?
+  bank_snapshot     String?
+  items_data        String?
+  totals_data       String?
+  quotation_ref     String?
+  work_order_ref    String?
+  adjustment_amount Float?
+  adjustment_note   String?
+  issue_date        String?
+  due_date          String?
+  approved_by       String?
+  terms_id          Int?
+  terms_text        String?
+  status            String?  @default("Draft")
+  version           Int?     @default(1)
+  cogs              Float?   @default(0)
+  amount_paid       Float?   @default(0)
+  vds               Float?   @default(0)
+  tds               Float?   @default(0)
+  payment_date      String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+
+  @@map("invoices")
+}
+
+model Quotation {
+  id                Int      @id @default(autoincrement())
+  client_id         Int?
+  to_company        String?
+  to_address        String?
+  attn              String?
+  type              String?
+  date              String?
+  vat               Float?
+  discount          Float?
+  items             String?
+  terms             String?
+  contact_name      String?
+  total             Float?
+  status            String?  @default("Draft")
+  work_order_number String?
+  created_at        DateTime @default(now())
+
+  @@map("quotations")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  shortcode   String   @unique
+  created_at  DateTime @default(now())
+
+  @@map("services")
+}
+
+model Term {
+  id          Int      @id @default(autoincrement())
+  type        String?  @default("invoice")
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+
+  @@map("terms")
+}
+
+model QuotationTerm {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+
+  @@map("quotation_terms")
+}
+
+model AdminUser {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  password_hash String
+  email         String?
+  full_name     String?
+  last_login    DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @default(now())
+  sessions      Session[]
+
+  @@map("admin_users")
+}
+
+model Session {
+  id         String    @id
+  user_id    Int
+  expires_at DateTime
+  created_at DateTime  @default(now())
+  user       AdminUser @relation(fields: [user_id], references: [id])
+
+  @@map("sessions")
+}
+
+model Setting {
+  key   String @id
+  value String?
+
+  @@map("settings")
+}

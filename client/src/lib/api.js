@@ -1,101 +1,92 @@
-import { ID, Query } from 'appwrite';
-import { databases, DATABASE_ID, COLLECTIONS } from './appwrite';
+const API_URL = 'http://localhost:5000/api';
+
+const request = async (endpoint, options = {}) => {
+    const url = `${API_URL}${endpoint}`;
+    
+    // Get session ID from localStorage
+    const sessionId = localStorage.getItem('sessionId');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(sessionId && { 'x-session-id': sessionId }),
+        ...options.headers,
+    };
+
+    const config = {
+        ...options,
+        headers,
+    };
+
+    try {
+        const response = await fetch(url, config);
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            
+            // If unauthorized, redirect to login
+            if (response.status === 401) {
+                localStorage.removeItem('sessionId');
+                window.location.href = '/login';
+            }
+            
+            throw new Error(errorBody.error || `Request failed: ${response.statusText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`API Error (${endpoint}):`, error);
+        throw error;
+    }
+};
 
 const api = {
-    settings: {
-        get: async () => {
-            try {
-                const response = await databases.listDocuments(
-                    DATABASE_ID,
-                    COLLECTIONS.SETTINGS
-                );
-                const settings = {};
-                response.documents.forEach(doc => {
-                    try {
-                        settings[doc.key] = JSON.parse(doc.value);
-                    } catch {
-                        settings[doc.key] = doc.value;
-                    }
-                });
-                return settings;
-            } catch (error) {
-                console.error("Appwrite Settings Get Error:", error);
-                return {};
-            }
-        },
-        update: async (key, value) => {
-            try {
-                const valStr = typeof value === 'object' ? JSON.stringify(value) : value;
+    // Generic methods for hooks
+    get: (endpoint) => request(endpoint, { method: 'GET' }),
+    post: (endpoint, data) => request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+    put: (endpoint, data) => request(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+    patch: (endpoint, data) => request(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
 
-                // Check if exists
-                const existing = await databases.listDocuments(
-                    DATABASE_ID,
-                    COLLECTIONS.SETTINGS,
-                    [Query.equal('key', key)]
-                );
-
-                if (existing.documents.length > 0) {
-                    return await databases.updateDocument(
-                        DATABASE_ID,
-                        COLLECTIONS.SETTINGS,
-                        existing.documents[0].$id,
-                        { value: valStr }
-                    );
-                } else {
-                    return await databases.createDocument(
-                        DATABASE_ID,
-                        COLLECTIONS.SETTINGS,
-                        ID.unique(),
-                        { key, value: valStr }
-                    );
-                }
-            } catch (error) {
-                console.error("Appwrite Settings Update Error:", error);
-                throw error;
-            }
-        }
-    },
+    // Resource methods
     clients: {
-        list: async () => {
-            const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.CLIENTS, [Query.limit(100), Query.orderDesc('$createdAt')]);
-            return response.documents;
-        },
-        create: async (data) => {
-            return await databases.createDocument(DATABASE_ID, COLLECTIONS.CLIENTS, ID.unique(), data);
-        },
-        update: async (id, data) => {
-            return await databases.updateDocument(DATABASE_ID, COLLECTIONS.CLIENTS, id, data);
-        },
-        delete: async (id) => {
-            return await databases.deleteDocument(DATABASE_ID, COLLECTIONS.CLIENTS, id);
-        }
+        list: () => request('/clients'),
+        create: (data) => request('/clients', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id) => request(`/clients/${id}`, { method: 'DELETE' }),
+        get: (id) => request(`/clients/${id}`),
     },
     invoices: {
-        list: async () => {
-            const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.INVOICES, [Query.limit(100), Query.orderDesc('created_at')]);
-            return response.documents;
-        },
-        create: async (data) => {
-            return await databases.createDocument(DATABASE_ID, COLLECTIONS.INVOICES, ID.unique(), data);
-        },
-        get: async (id) => {
-            return await databases.getDocument(DATABASE_ID, COLLECTIONS.INVOICES, id);
-        },
-        update: async (id, data) => {
-            return await databases.updateDocument(DATABASE_ID, COLLECTIONS.INVOICES, id, data);
-        }
+        list: () => request('/invoices'),
+        create: (data) => request('/invoices', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id) => request(`/invoices/${id}`),
+        update: (id, data) => request(`/invoices/${id}`, { method: 'PATCH', body: JSON.stringify(data) }), // Assuming PATCH for updates based on previous findings, or could be PUT
+        updatePayment: (id, data) => request(`/invoices/${id}/payment`, { method: 'PATCH', body: JSON.stringify(data) }),
     },
     quotations: {
-        list: async () => {
-            const response = await databases.listDocuments(DATABASE_ID, COLLECTIONS.QUOTATIONS, [Query.limit(100), Query.orderDesc('created_at')]);
-            return response.documents;
-        },
-        create: async (data) => {
-            return await databases.createDocument(DATABASE_ID, COLLECTIONS.QUOTATIONS, ID.unique(), data);
-        },
-        update: async (id, data) => {
-            return await databases.updateDocument(DATABASE_ID, COLLECTIONS.QUOTATIONS, id, data);
-        }
+        list: () => request('/quotations'),
+        create: (data) => request('/quotations', { method: 'POST', body: JSON.stringify(data) }),
+        get: (id) => request(`/quotations/${id}`),
+        update: (id, data) => request(`/quotations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id) => request(`/quotations/${id}`, { method: 'DELETE' }),
+    },
+    services: {
+        list: () => request('/services'),
+        create: (data) => request('/services', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/services/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        delete: (id) => request(`/services/${id}`, { method: 'DELETE' }),
+    },
+    terms: {
+        list: () => request('/terms'),
+        create: (data) => request('/terms', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id, data) => request(`/terms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+        delete: (id) => request(`/terms/${id}`, { method: 'DELETE' }),
+    },
+    settings: {
+        get: () => request('/settings'),
+        update: (key, value) => request('/settings', { method: 'POST', body: JSON.stringify({ key, value }) }),
+    },
+    email: {
+        sendInvoice: (invoiceId, data) => request('/email/send-invoice', { method: 'POST', body: JSON.stringify({ invoice_id: invoiceId, ...data }) }),
+        sendQuotation: (quotationId, data) => request('/email/send-quotation', { method: 'POST', body: JSON.stringify({ quotation_id: quotationId, ...data }) }),
+        testSMTP: () => request('/email/test-smtp', { method: 'POST', body: JSON.stringify({}) }),
     }
 };
 

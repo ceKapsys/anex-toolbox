@@ -7,6 +7,7 @@ import '../../assets/css/invoice-print.css';
  * Renders the exact HTML structure required for the invoice PDF (Mushak 6.3 compliant).
  */
 const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
+    console.log('InvoiceTemplate Rendering:', { data, ref });
     if (!data) return null;
 
     const {
@@ -50,7 +51,7 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
                 </div>
                 <div className="center-stack">
                     <div className="gov-text">Government of the People's Republic of Bangladesh</div>
-                    <div className="gov-text">National Board of Revenue (Tax Invoice)</div>
+                    <div className="gov-text">National Board of Revenue (NBR)</div>
                     <div className="tag-box">TAX INVOICE</div>
                 </div>
                 <div className="right-tag">
@@ -60,7 +61,7 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
 
             <div className="section">
                 <div className="section-head">Registered Business Info</div>
-                <div className="section-body" style={{ textAlign: 'center' }}>
+                <div className="section-body text-center">
                     <div><span className="label">Business Name:</span> <span className="val">{company_details?.name}</span></div>
                     <div><span className="label">BIN Number:</span> <span className="val">{company_details?.bin}</span></div>
                     <div><span className="label">Address:</span> <span className="val">{company_details?.address}</span></div>
@@ -68,27 +69,35 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
             </div>
 
             <div className="anex-row">
-                <div className="section" style={{ flex: 1 }}>
-                    <div className="section-head">Buyer Information</div>
-                    <div className="section-body">
-                        <div className="info-grid">
-                            <div className="label">Buyer Name</div><div className="sep">:</div><div className="val">{client?.name}</div>
-                            <div className="label">Buyer BIN</div><div className="sep">:</div><div className="val">{client?.bin}</div>
-                            <div className="label">Buyer Address</div><div className="sep">:</div><div className="val">{client?.address}</div>
+                <div className="col-left">
+                    <div className="section">
+                        <div className="section-head">Buyer Information</div>
+                        <div className="section-body">
+                            <table className="info-table">
+                                <tbody>
+                                    <tr><td className="info-label-cell">Buyer Name</td><td className="info-sep-cell">:</td><td className="info-val-cell">{client?.name}</td></tr>
+                                    <tr><td className="info-label-cell">Buyer BIN</td><td className="info-sep-cell">:</td><td className="info-val-cell">{client?.bin}</td></tr>
+                                    <tr><td className="info-label-cell">Buyer Address</td><td className="info-sep-cell">:</td><td className="info-val-cell">{client?.address}</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-                <div className="section" style={{ flex: 1 }}>
-                    <div className="section-head">Invoice Information</div>
-                    <div className="section-body">
-                        <div className="info-grid">
-                            <div className="label">Invoice Number</div><div className="sep">:</div><div className="val">{invoice_no}</div>
-                            <div className="label">Invoice Issue Date</div><div className="sep">:</div><div className="val">{issue_date}</div>
-                            <div className="label">Invoice Due Date</div><div className="sep">:</div><div className="val">{due_date}</div>
-                            {time_f && <><div className="label">Timestamp</div><div className="sep">:</div><div className="val">{time_f}</div></>}
-                            {quote_ref && <><div className="label">Quotation Ref</div><div className="sep">:</div><div className="val">{quote_ref}</div></>}
-                            {work_order_ref && <><div className="label">Work Order Ref</div><div className="sep">:</div><div className="val">{work_order_ref}</div></>}
-                            {approved_by && <><div className="label">Approved By</div><div className="sep">:</div><div className="val">{approved_by}</div></>}
+                <div className="col-right">
+                    <div className="section">
+                        <div className="section-head">Invoice Information</div>
+                        <div className="section-body">
+                            <table className="info-table">
+                                <tbody>
+                                    <tr><td className="info-label-cell">Invoice Number</td><td className="info-sep-cell">:</td><td className="info-val-cell">{invoice_no}</td></tr>
+                                    <tr><td className="info-label-cell">Invoice Issue Date</td><td className="info-sep-cell">:</td><td className="info-val-cell">{issue_date}</td></tr>
+                                    <tr><td className="info-label-cell">Invoice Due Date</td><td className="info-sep-cell">:</td><td className="info-val-cell">{due_date}</td></tr>
+                                    {time_f && <tr><td className="info-label-cell">Timestamp</td><td className="info-sep-cell">:</td><td className="info-val-cell">{time_f}</td></tr>}
+                                    {quote_ref && <tr><td className="info-label-cell">Quotation Ref</td><td className="info-sep-cell">:</td><td className="info-val-cell">{quote_ref}</td></tr>}
+                                    {work_order_ref && <tr><td className="info-label-cell">Work Order Ref</td><td className="info-sep-cell">:</td><td className="info-val-cell">{work_order_ref}</td></tr>}
+                                    {approved_by && <tr><td className="info-label-cell">Approved By</td><td className="info-sep-cell">:</td><td className="info-val-cell">{approved_by}</td></tr>}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -139,14 +148,24 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
             <div className="content-section">
                 <div className="words">Total in Words: {amount_in_words} Taka Only</div>
 
-                <div className="math-row">
-                    <div className="math-box"><div className="math-head">Net Amount</div><div>{fmt(total_ex_vat)}</div></div>
-                    <div>+</div>
-                    <div className="math-box"><div className="math-head">VAT Amount</div><div>{fmt(total_vat)}</div></div>
-                    <div>-</div>
-                    <div className="math-box"><div className="math-head">Adjustment</div><div>{adjust_amount ? fmt(adjust_amount) : '-'}</div></div>
-                    <div>=</div>
-                    <div className="math-box"><div className="math-head">Due Amount</div><div>{fmt(due_amount)}</div></div>
+                <div className="math-container">
+                    <div className="math-row">
+                        <div className="math-item">
+                            <div className="math-box"><div className="math-head">Net Amount</div><div className="math-val">{fmt(total_ex_vat)}</div></div>
+                        </div>
+                        <div className="math-item math-op">+</div>
+                        <div className="math-item">
+                            <div className="math-box"><div className="math-head">VAT Amount</div><div className="math-val">{fmt(total_vat)}</div></div>
+                        </div>
+                        <div className="math-item math-op">-</div>
+                        <div className="math-item">
+                            <div className="math-box"><div className="math-head">Adjustment</div><div className="math-val">{adjust_amount ? fmt(adjust_amount) : '-'}</div></div>
+                        </div>
+                        <div className="math-item math-op">=</div>
+                        <div className="math-item">
+                            <div className="math-box"><div className="math-head">Due Amount</div><div className="math-val">{fmt(due_amount)}</div></div>
+                        </div>
+                    </div>
                 </div>
 
                 {adjust_note && <div className="adjustment-note"><strong>Adjustment Note:</strong> {adjust_note}</div>}
@@ -157,35 +176,45 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
             <div className="content-section">
                 <div className="terms">
                     <h3>Terms & Conditions</h3>
-                    <div style={{ whiteSpace: 'pre-line' }}>{terms}</div>
+                    {data.terms_text ? (
+                        <ul className="terms-list-ul">
+                            {data.terms_text.split('\n').filter(line => line.trim()).map((line, idx) => (
+                                <li key={idx}>{line.trim().replace(/^[-•*]\s*/, '')}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div className="terms-text-container">{terms}</div>
+                    )}
                 </div>
             </div>
 
             <div className="content-section">
-                <div className="payment-card">
+                <div className="payment-section">
                     <div className="payment-head">Payment Method</div>
                     <div className="payment-body">
-                        <div className="bank-logo">
-                            {bank_details?.logo ? (
-                                <img src={bank_details.logo} alt="Bank" />
-                            ) : (
-                                <div className="bank-logo text">{bank_details?.bank?.substring(0, 3).toUpperCase()}</div>
-                            )}
-                        </div>
-                        <div className="bank-details">
-                            <div className="bank-row">
-                                <div className="bank-label">Bank<span className="bank-sep">:</span></div>
-                                <div className="bank-val">{bank_details?.bank}</div>
-                                <div className="bank-sep">|</div>
-                                <div className="bank-label">A/C Name<span className="bank-sep">:</span></div>
-                                <div className="bank-val">{bank_details?.ac_name}</div>
+                        <div className="bank-left">
+                            <div className="bank-logo-box">
+                                {bank_details?.logo ? (
+                                    <img src={bank_details.logo} alt="Bank" />
+                                ) : (
+                                    <div className="bank-logo-text">{bank_details?.bank?.substring(0, 3).toUpperCase()}</div>
+                                )}
                             </div>
-                            <div className="bank-row">
-                                <div className="bank-label">A/C No.<span className="bank-sep">:</span></div>
-                                <div className="bank-val">{bank_details?.ac_no}</div>
-                                <div className="bank-sep">|</div>
-                                <div className="bank-label">Routing<span className="bank-sep">:</span></div>
-                                <div className="bank-val">{bank_details?.routing}</div>
+                        </div>
+                        <div className="bank-right">
+                            <div className="bank-info-line">
+                                <span className="bank-label">Bank Name:</span>
+                                <span className="bank-val">{bank_details?.bank}</span>
+                                <span className="bank-pipe">|</span>
+                                <span className="bank-label">A/C Name:</span>
+                                <span className="bank-val">{bank_details?.ac_name}</span>
+                            </div>
+                            <div className="bank-info-line">
+                                <span className="bank-label">A/C No:</span>
+                                <span className="bank-val">{bank_details?.ac_no}</span>
+                                <span className="bank-pipe">|</span>
+                                <span className="bank-label">Routing:</span>
+                                <span className="bank-val">{bank_details?.routing}</span>
                             </div>
                         </div>
                     </div>
@@ -194,7 +223,7 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
 
             <div className="foot-note">
                 {disclaimer && <div>{disclaimer}</div>}
-                <div>For any issues please contact <span style={{ color: '#2563eb', fontWeight: 700 }}>finance@anexbusiness.com</span></div>
+                <div>For any issues please contact <span className="contact-email-link">finance@anexbusiness.com</span></div>
             </div>
         </div>
     );

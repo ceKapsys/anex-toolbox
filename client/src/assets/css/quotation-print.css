@@ -1,272 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;700&display=swap');
+
 /**
  * A4 Quotation Print Stylesheet
- * 
- * Designed for:
- * - Browser print preview (A4)
- * - Server-side PDF generation (Puppeteer, DomPDF, wkhtmltopdf)
- * - Deterministic rendering across platforms
- * 
- * @package ANEX Tools Suite
- * @since 2.3.0
+ * Redigned to match Dark Teal Reference
  */
 
 /* ===========================
-   A4 Page Configuration
+   Page Configuration
    =========================== */
-
 @page {
     size: A4;
     margin: 0;
 }
 
 /* ===========================
-   Page Container (A4)
+   Page Layout
    =========================== */
-
 .quotation-page {
     width: 210mm;
-    min-height: 297mm;
+    min-height: 296mm;
+    /* Slightly reduced to prevent overflow */
+    max-height: 296mm;
+    /* Force height */
+    overflow: hidden;
+    /* Hide overflow */
     background: #ffffff;
     margin: 0 auto;
     position: relative;
     padding: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 10pt;
-    line-height: 1.3;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    /* This pushes footer to bottom */
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     color: #333;
+    line-height: 1.3;
 }
 
 @media print {
-    body {
-        background: #ffffff;
-    }
-
     .quotation-page {
-        width: 210mm;
-        min-height: 297mm;
         margin: 0;
         box-shadow: none;
+        min-height: 296mm;
+        height: 296mm;
+        /* Force height for reliable footer placement */
     }
 }
 
 /* ===========================
-   Global Header
+   Header Section
    =========================== */
-
 .quotation-header {
     width: 100%;
     text-align: center;
+    margin-bottom: 20px;
 }
 
 .header-image {
     width: 100%;
     height: auto;
     display: block;
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 0;
-    font-size: 0;
+    margin: 0;
 }
 
 .quotation-title {
-    font-family: 'Do Hyeon', 'Arial Black', sans-serif;
-    font-size: 36pt;
-    font-weight: bold;
+    font-family: 'Reddit Sans', sans-serif;
+    font-size: 42px;
+    font-weight: 700;
     color: #1a4f5a;
+    /* Dark Teal from reference */
+    letter-spacing: 1px;
+    margin: 15px 0;
     text-align: center;
-    margin: 4mm 0 4mm 0;
-    letter-spacing: 2px;
-    text-transform: uppercase;
 }
 
 /* ===========================
    Main Content Area
    =========================== */
-
 .quotation-content {
-    padding: 0 20mm;
-    padding-bottom: 10mm;
+    flex: 1;
+    /* Takes up remaining space */
+    padding: 0 40px;
+    /* Side padding */
+    display: flex;
+    flex-direction: column;
 }
 
 /* ===========================
-   Quotation Info Section
+   Info Box (Rounded)
    =========================== */
-
 .quotation-info-box {
-    border: 1.5px solid #666;
-    border-radius: 10px;
+    border: 1px solid #9ca3af;
+    /* Gray border */
+    border-radius: 12px;
+    /* Rounded corners */
     display: flex;
-    flex-direction: row;
-    margin-bottom: 6mm;
     overflow: hidden;
+    margin-bottom: 25px;
 }
 
 .info-column {
-    flex: 1;
     width: 50%;
-    padding: 12pt 16pt;
-    font-size: 9pt;
+    padding: 15px 20px;
+    font-size: 10pt;
 }
 
 .info-column:first-child {
-    border-right: 1.5px solid #666;
-    border-bottom: none;
+    border-right: 1px solid #9ca3af;
+    /* Divider */
 }
 
-/* Left Column: Client Info */
-
+/* Left Column Styling */
 .info-label-header {
     font-size: 9pt;
-    font-weight: bold;
-    color: #2b5a5e;
+    font-weight: 700;
+    color: #1a4f5a;
+    /* Dark Teal */
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    padding-bottom: 3pt;
-    border-bottom: 1px solid #d9d9d9;
-    margin-bottom: 8pt;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 4px;
+    letter-spacing: 0.5px;
 }
 
 .client-name {
-    font-size: 10pt;
-    font-weight: bold;
+    font-size: 11pt;
+    font-weight: 700;
     color: #000;
-    margin-bottom: 4pt;
-    line-height: 1;
+    margin-bottom: 4px;
 }
 
 .client-address {
     font-size: 9pt;
-    color: #000;
-    line-height: 1;
-    margin-bottom: 5pt;
+    color: #374151;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    white-space: pre-line;
 }
 
 .client-attention {
     font-size: 9pt;
-    margin-top: 6pt;
-    color: #000;
+    margin-top: 4px;
+    color: #374151;
 }
 
 .attention-label {
-    font-weight: bold;
-    color: #2b5a5e;
-    margin-right: 4pt;
+    font-weight: 700;
+    color: #1a4f5a;
+    margin-right: 4px;
 }
 
-/* Right Column: Reference Info */
-
+/* Right Column Styling */
 .info-row {
     display: flex;
+    margin-bottom: 6px;
     align-items: baseline;
-    margin-bottom: 5pt;
 }
 
 .info-label {
-    width: 70pt;
-    font-weight: bold;
-    color: #2b5a5e;
-    flex-shrink: 0;
+    width: 70px;
+    font-weight: 700;
+    color: #1a4f5a;
 }
 
 .info-colon {
-    width: 10pt;
-    font-weight: bold;
-    text-align: left;
-    flex-shrink: 0;
-    color: #000;
+    width: 15px;
+    font-weight: 700;
+    text-align: center;
 }
 
 .info-value {
-    font-weight: bold;
+    font-weight: 700;
     color: #000;
-    flex-grow: 1;
+    flex: 1;
 }
 
 /* ===========================
    Items Table
    =========================== */
-
 .quotation-items {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
 .items-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
-}
-
-.items-table thead {
-    background: #1a4f5a;
-    color: #ffffff;
 }
 
 .items-table th {
-    padding: 10pt 8pt;
+    background-color: #1a4f5a;
+    /* Dark Teal Header */
+    color: #fff;
+    padding: 10px 12px;
     text-align: left;
     font-size: 10pt;
-    font-weight: bold;
-    border: none;
+    font-weight: 700;
+    text-transform: capitalize;
 }
 
-.items-table tbody tr {
-    border-bottom: 1px solid #ddd;
-}
-
-.items-table tbody tr:nth-child(odd) td {
-    background: #f5f7f8;
-}
-
-.items-table tbody tr:nth-child(even) td {
-    background: #ffffff;
-}
-
-.items-table tbody td {
-    padding: 10pt 8pt;
+.items-table td {
+    padding: 10px 12px;
+    font-size: 10pt;
     vertical-align: top;
-    font-size: 9pt;
-    border: none;
+    color: #333;
+    border-bottom: 1px solid #f3f4f6;
 }
 
-/* Column Widths */
-.col-sl,
-.items-table th:nth-child(1) {
+/* Column Widths & Alignments */
+.col-sl {
     width: 8%;
     text-align: center;
 }
 
-.col-item,
-.items-table th:nth-child(2) {
-    width: 44%;
+.col-item {
     text-align: left;
 }
 
-.col-qty,
-.items-table th:nth-child(3) {
+.col-qty {
     width: 10%;
     text-align: center;
 }
 
-.col-unit,
-.items-table th:nth-child(4) {
+.col-unit {
     width: 10%;
     text-align: center;
 }
 
-.col-price,
-.items-table th:nth-child(5) {
-    width: 14%;
+.col-price {
+    width: 15%;
     text-align: right;
 }
 
-.col-total,
-.items-table th:nth-child(6) {
-    width: 14%;
+.col-total {
+    width: 15%;
     text-align: right;
 }
 
-/* Cell Alignment Classes */
 .cell-center {
     text-align: center;
 }
@@ -275,218 +244,166 @@
     text-align: right;
 }
 
-.cell-item {
-    text-align: left;
-}
-
-/* Item Content */
+/* Item Styling */
 .item-title {
-    font-weight: bold;
+    font-weight: 700;
     color: #000;
-    margin-bottom: 2pt;
-    font-size: 9pt;
+    margin-bottom: 2px;
 }
 
 .item-description {
-    font-size: 8pt;
-    color: #555;
-    line-height: 1;
+    font-size: 9pt;
+    color: #6b7280;
     white-space: pre-wrap;
-    word-wrap: break-word;
 }
 
 /* ===========================
    Financial Summary
    =========================== */
-
 .financial-summary {
-    width: 100%;
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 1mm;
+    margin-bottom: 30px;
 }
 
 .summary-table {
     width: 45%;
     border-collapse: separate;
-    border-spacing: 0 2px;
+    border-spacing: 0 1px;
 }
 
 .summary-row td {
-    padding: 8pt 12pt;
+    padding: 8px 12px;
     font-size: 10pt;
 }
 
 .summary-label {
     text-align: right;
-    background: #ffffff;
-    font-weight: normal;
-    color: #333;
-    padding-right: 15pt;
+    font-weight: 600;
+    color: #374151;
+    padding-right: 20px;
 }
 
 .summary-value {
     text-align: right;
-    background: #e8e8e8;
+    font-weight: 700;
     color: #000;
-    font-weight: bold;
-    min-width: 120pt;
+    background-color: #9ca3af;
+    /* Default Gray for Subtotal */
+    color: #fff;
+    min-width: 120px;
 }
 
+/* Specific Colors for Rows */
+/* Subtotal - Light Gray/Blueish */
+.summary-row:nth-child(1) .summary-value {
+    background-color: #9ca3af;
+    /* Slate  */
+}
+
+/* VAT - Teal Gray */
 .summary-row:nth-child(2) .summary-value {
-    background: #7d96a8;
-    color: #ffffff;
+    background-color: #6b7280;
+    /* Darker Slate */
 }
 
-.summary-total .summary-label,
-.summary-total .summary-value {
-    background: #2b4c55;
-    color: #ffffff;
+/* Total - Dark Teal */
+.summary-row.summary-total .summary-label {
+    font-weight: 700;
     font-size: 11pt;
-    font-weight: bold;
+    color: #000;
 }
+
+.summary-row.summary-total .summary-value {
+    background-color: #587782;
+    /* Muted Teal from Reference */
+    color: #fff;
+    font-size: 12pt;
+    font-weight: 800;
+}
+
 
 /* ===========================
-   Footer Grid
+   Footer Grid (Terms & Contact)
    =========================== */
-
 .footer-grid {
     display: flex;
-    gap: 3%;
-    margin-bottom: 6mm;
+    justify-content: space-between;
+    gap: 30px;
+    margin-top: auto;
+    /* If content is short, push lightly? No, global footer pushes. This is just before. */
+    margin-bottom: 20px;
 }
 
 .footer-box {
-    border: 1.5px solid #333;
-    border-radius: 4px;
-    padding: 10pt;
-    background: #ffffff;
-}
-
-.footer-box:first-child {
-    width: 62%;
-}
-
-.footer-box:nth-child(2) {
-    width: 35%;
+    flex: 1;
+    border: 1px solid #9ca3af;
+    border-radius: 12px;
+    padding: 15px;
+    background-color: #f3f4f6;
+    /* Light gray fill */
 }
 
 .footer-box-title {
-    font-size: 12px;
-    font-weight: bold;
+    font-size: 10pt;
+    font-weight: 700;
+    text-decoration: underline;
+    margin: 0 0 8px 0;
     color: #000;
-    margin: 0 0 8pt 0;
-    padding-bottom: 3pt;
-    border-bottom: 1px solid #333;
-    text-decoration: none;
 }
 
 .footer-box-content {
-    font-size: 10px;
-    line-height: 1.0;
-    color: #333;
+    font-size: 9pt;
+    line-height: 1.4;
+    color: #374151;
 }
 
 .terms-list {
     margin: 0;
-    padding-left: 16pt;
-    list-style: disc;
+    padding-left: 15px;
 }
 
-.terms-list li {
-    margin-bottom: 2pt;
-}
-
-.terms-list li:last-child {
-    margin-bottom: 0;
-}
-
-.footer-box-content p {
-    margin: 0 0 6pt 0;
-}
-
-.footer-box-content p:last-child {
-    margin-bottom: 0;
-}
-
-/* Contact Details Styling */
+/* Contact Info Styling */
 .contact-name {
-    font-weight: bold;
-    font-size: 12px;
+    font-weight: 800;
     color: #000;
-    margin-bottom: 3pt;
+    font-size: 10pt;
+    margin-bottom: 2px;
 }
 
 .contact-designation {
-    font-size: 10px;
-    color: #555;
-    font-style: normal;
-    margin-bottom: 5pt;
+    font-size: 9pt;
+    color: #4b5563;
+    margin-bottom: 6px;
 }
 
 .contact-info {
-    font-size: 10px;
-    color: #333;
-    margin-bottom: 2pt;
-    line-height: 1.4;
+    font-size: 9pt;
+    margin-bottom: 2px;
 }
 
-/* ===========================
-   Global Footer
-   =========================== */
 
+/* ===========================
+   Global Footer (Bottom Bleed)
+   =========================== */
 .quotation-footer {
     width: 100%;
-    text-align: center;
     margin-top: auto;
+    /* Pushes to bottom of flex container */
 }
 
 .disclaimer {
     text-align: center;
     font-size: 8pt;
-    color: #666;
-    padding: 8pt 20mm;
-    line-height: 1;
+    color: #6b7280;
+    padding: 5px 40px;
+    margin-bottom: 5px;
 }
 
 .footer-image {
     width: 100%;
     height: auto;
     display: block;
-    margin: 0 !important;
-    padding: 0 !important;
+    margin: 0;
     line-height: 0;
-    font-size: 0;
-}
-
-/* ===========================
-   Utility Classes
-   =========================== */
-
-.text-center {
-    text-align: center;
-}
-
-.text-right {
-    text-align: right;
-}
-
-.text-left {
-    text-align: left;
-}
-
-.font-bold {
-    font-weight: bold;
-}
-
-.mt-small {
-    margin-top: 6pt;
-}
-
-.mb-small {
-    margin-bottom: 6pt;
-}
-
-.hidden {
-    display: none;
 }

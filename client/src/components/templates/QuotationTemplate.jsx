@@ -58,7 +58,7 @@ const QuotationTemplate = React.forwardRef(({ data }, ref) => {
                 {header_image && (
                     <img src={header_image} alt="Header" className="header-image" />
                 )}
-                <h1 className="quotation-title">QUOTATION</h1>
+                <h1 className="quotation-title">Quotation</h1>
             </header>
 
             {/* Main Content */}
@@ -70,7 +70,7 @@ const QuotationTemplate = React.forwardRef(({ data }, ref) => {
                     <div className="info-column">
                         <div className="info-label-header">QUOTATION TO</div>
                         <div className="client-name">{client.name}</div>
-                        <div className="client-address" style={{ whiteSpace: 'pre-line' }}>{client.address}</div>
+                        <div className="client-address">{client.address}</div>
                         {client.attention && (
                             <div className="client-attention">
                                 <span className="attention-label">Attn:</span>

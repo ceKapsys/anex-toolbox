@@ -1,16 +1,41 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, FileSpreadsheet, Users, Settings } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, FileText, FileSpreadsheet, Users, Wrench, ListChecks, Settings, BarChart3, LogOut } from 'lucide-react';
 import clsx from 'clsx';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Sidebar = () => {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
     const navItems = [
-        { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/invoices', icon: FileText, label: 'Invoices' },
         { to: '/quotations', icon: FileSpreadsheet, label: 'Quotations' },
         { to: '/clients', icon: Users, label: 'Clients' },
+        { to: '/services', icon: Wrench, label: 'Services' },
+        { to: '/terms', icon: ListChecks, label: 'Terms' },
+        { to: '/analytics', icon: BarChart3, label: 'Analytics' },
         { to: '/settings', icon: Settings, label: 'Settings' },
     ];
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
+
+    // Get initials from username or full name
+    const getInitials = () => {
+        if (user?.full_name) {
+            return user.full_name
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+        }
+        return user?.username?.slice(0, 2).toUpperCase() || 'AD';
+    };
 
     return (
         <aside className="w-72 border-r border-slate-100 bg-[#fbf9f7] px-6 py-7">
@@ -42,16 +67,24 @@ const Sidebar = () => {
                 ))}
             </nav>
 
-            <div className="mt-auto pt-10">
+            <div className="mt-auto pt-10 space-y-2">
                 <div className="flex items-center gap-3 rounded-2xl bg-white/70 px-3 py-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">
-                        AB
+                        {getInitials()}
                     </div>
                     <div className="flex-1">
-                        <p className="text-sm font-semibold text-slate-700">ANEX Business</p>
-                        <p className="text-xs text-slate-400">Admin</p>
+                        <p className="text-sm font-semibold text-slate-700">{user?.full_name || user?.username}</p>
+                        <p className="text-xs text-slate-400">{user?.email || 'Admin'}</p>
                     </div>
                 </div>
+                
+                <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 hover:bg-white/70 hover:text-red-600 transition-all"
+                >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
     );

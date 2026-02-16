@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const quotationRepository = require('../repositories/QuotationRepository');
+const { isAuthenticated } = require('./auth');
 
 const parseJson = (row) => {
     if (!row) return row;
@@ -8,39 +9,98 @@ const parseJson = (row) => {
     return row;
 };
 
-router.get('/', (req, res) => {
-    db.all("SELECT * FROM quotations ORDER BY id DESC", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows.map(parseJson));
-    });
+router.get('/', async (req, res) => {
+    try {
+        const quotations = await quotationRepository.findAll({
+            orderBy: { id: 'desc' }
+        });
+        res.json(quotations.map(parseJson));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-router.get('/:id', (req, res) => {
-    db.get("SELECT * FROM quotations WHERE id = ?", [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) return res.status(404).json({ error: 'Quotation not found' });
-        res.json(parseJson(row));
-    });
+router.get('/:id', async (req, res) => {
+    try {
+        const quotation = await quotationRepository.findById(req.params.id);
+        if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+        res.json(parseJson(quotation));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-router.post('/', (req, res) => {
-    const d = req.body;
-    const items = JSON.stringify(d.items || []);
+router.post('/', isAuthenticated, async (req, res) => {
+    try {
+        const d = req.body;
+        const items = JSON.stringify(d.items || []);
 
-    const sql = `INSERT INTO quotations (
-        client_id, to_company, to_address, attn, type, date, vat, discount,
-        items, terms, contact_name, total, status
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+        const data = {
+            client_id: d.client_id,
+            to_company: d.to_company,
+            to_address: d.to_address,
+            attn: d.attn,
+            type: d.type,
+            date: d.date,
+            vat: d.vat,
+            discount: d.discount,
+            items,
+            terms: d.terms,
+            contact_name: d.contact_name,
+            total: d.total,
+            status: d.status || 'Draft'
+        };
 
-    const params = [
-        d.client_id, d.to_company, d.to_address, d.attn, d.type, d.date, d.vat, d.discount,
-        items, d.terms, d.contact_name, d.total, d.status || 'Draft'
-    ];
+        const newQuotation = await quotationRepository.create(data);
+        res.json({ id: newQuotation.id, message: 'Quotation Created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-    db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Quotation Created' });
-    });
+router.put('/:id', isAuthenticated, async (req, res) => {
+    try {
+        const d = req.body;
+
+        const data = {};
+        if (d.client_id !== undefined) data.client_id = d.client_id;
+        if (d.to_company !== undefined) data.to_company = d.to_company;
+        if (d.to_address !== undefined) data.to_address = d.to_address;
+        if (d.attn !== undefined) data.attn = d.attn;
+        if (d.type !== undefined) data.type = d.type;
+        if (d.date !== undefined) data.date = d.date;
+        if (d.vat !== undefined) data.vat = d.vat;
+        if (d.discount !== undefined) data.discount = d.discount;
+        if (d.items) data.items = JSON.stringify(d.items);
+        if (d.terms !== undefined) data.terms = d.terms;
+        if (d.contact_name !== undefined) data.contact_name = d.contact_name;
+        if (d.total !== undefined) data.total = d.total;
+        if (d.status !== undefined) data.status = d.status;
+        if (d.work_order_number !== undefined) data.work_order_number = d.work_order_number;
+        if (d.quotation_number !== undefined) data.work_order_number = d.quotation_number;
+
+        if (Object.keys(data).length === 0) return res.json({ message: 'No changes provided' });
+
+        await quotationRepository.update(req.params.id, data);
+        res.json({ message: 'Quotation updated successfully' });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Quotation not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        await quotationRepository.delete(req.params.id);
+        res.json({ message: 'Quotation deleted successfully' });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Quotation not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;
