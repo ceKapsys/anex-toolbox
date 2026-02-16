@@ -6,7 +6,10 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173', 'https://anex-toolbox.vercel.app', 'https://anex-toolbox-qxqi.vercel.app'],
+    credentials: true
+}));
 app.use(bodyParser.json({ limit: '50mb' })); // Large limit for base64 PDFs or images
 
 // Routes

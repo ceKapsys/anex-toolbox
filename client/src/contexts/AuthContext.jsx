@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const API_URL = 'http://localhost:5000/api';
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
     // Check if user is already logged in (on mount)
     useEffect(() => {
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
                     'x-session-id': sid
                 }
             });
-            
+
             if (response.data.authenticated) {
                 setUser(response.data.user);
                 setSessionId(sid);
