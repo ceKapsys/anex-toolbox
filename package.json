@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
+    "build": "prisma generate",
     "postinstall": "prisma generate"
   },
   "dependencies": {
