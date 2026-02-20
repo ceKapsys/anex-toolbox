@@ -1,69 +1,56 @@
 /**
- * Invoice PDF Generator using pdfmake
- * Generates Mushak 6.3 compliant Tax Invoice PDF
- * Clean vector output — no canvas/rasterization issues
+ * Invoice PDF Generator — pdfmake (Mushak 6.3 Tax Invoice)
+ * Static imports ensure Vite/Vercel builds correctly.
  */
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// Dynamic import to reduce initial bundle size
-let pdfMakeInstance = null;
+// Wire fonts once at module load
+pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts.vfs ?? pdfFonts;
 
-const getPdfMake = async () => {
-    if (pdfMakeInstance) return pdfMakeInstance;
-    const [pdfMake, pdfFonts] = await Promise.all([
-        import('pdfmake/build/pdfmake'),
-        import('pdfmake/build/vfs_fonts'),
-    ]);
-    const pm = pdfMake.default || pdfMake;
-    const fonts = pdfFonts.default || pdfFonts;
-    pm.vfs = fonts.pdfMake?.vfs ?? fonts.vfs ?? fonts;
-
-    // Register custom table layouts
-    pm.tableLayouts = {
-        cleanBox: {
-            hLineColor: () => '#9ca3af',
-            vLineColor: () => '#9ca3af',
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0.5,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-            paddingTop: () => 0,
-            paddingBottom: () => 0,
-        },
-        noBorders: {
-            hLineWidth: () => 0,
-            vLineWidth: () => 0,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-            paddingTop: () => 0,
-            paddingBottom: () => 0,
-        },
-        tagBox: {
-            hLineColor: () => '#374151',
-            vLineColor: () => '#374151',
-            hLineWidth: () => 0.75,
-            vLineWidth: () => 0.75,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-            paddingTop: () => 0,
-            paddingBottom: () => 0,
-        },
-        itemsGrid: {
-            hLineColor: () => '#9ca3af',
-            vLineColor: () => '#9ca3af',
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0.5,
-            paddingLeft: (i) => (i === 1 ? 4 : 3),
-            paddingRight: () => 3,
-            paddingTop: () => 2,
-            paddingBottom: () => 2,
-        },
-    };
-
-    pdfMakeInstance = pm;
-    return pm;
+// Custom table layouts (registered globally)
+pdfMake.tableLayouts = {
+    cleanBox: {
+        hLineColor: () => '#9ca3af',
+        vLineColor: () => '#9ca3af',
+        hLineWidth: () => 0.5,
+        vLineWidth: () => 0.5,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+    },
+    noBorders: {
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+    },
+    tagBox: {
+        hLineColor: () => '#374151',
+        vLineColor: () => '#374151',
+        hLineWidth: () => 0.75,
+        vLineWidth: () => 0.75,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+    },
+    itemsGrid: {
+        hLineColor: () => '#9ca3af',
+        vLineColor: () => '#9ca3af',
+        hLineWidth: () => 0.5,
+        vLineWidth: () => 0.5,
+        paddingLeft: (i) => (i === 1 ? 4 : 3),
+        paddingRight: () => 3,
+        paddingTop: () => 2,
+        paddingBottom: () => 2,
+    },
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const fmt = (n) =>
     new Intl.NumberFormat('en-US', {
@@ -71,7 +58,6 @@ const fmt = (n) =>
         maximumFractionDigits: 2,
     }).format(Number(n) || 0);
 
-// Convert an image URL → data URL for pdfmake
 const toDataUrl = async (url) => {
     if (!url) return null;
     if (url.startsWith('data:')) return url;
@@ -88,26 +74,7 @@ const toDataUrl = async (url) => {
     }
 };
 
-// ─── Tag box (TAX INVOICE / MUSHAK 6.3) ─────────────────────────────────────
-
-const tagBox = (text, extraMargin = [0, 0, 0, 0]) => ({
-    table: {
-        widths: ['auto'],
-        body: [[{
-            text,
-            fontSize: 8.5,
-            bold: true,
-            alignment: 'center',
-            color: '#111',
-            margin: [8, 2, 8, 2],
-            border: [true, true, true, true],
-        }]],
-    },
-    layout: 'tagBox',
-    margin: extraMargin,
-});
-
-// ─── Section box (labeled bordered container) ────────────────────────────────
+// ─── Element builders ────────────────────────────────────────────────────────
 
 const sectionBox = (title, bodyStack, margin = [0, 0, 0, 5]) => ({
     table: {
@@ -115,13 +82,9 @@ const sectionBox = (title, bodyStack, margin = [0, 0, 0, 5]) => ({
         body: [
             [{
                 text: title,
-                fontSize: 8.5,
-                bold: true,
-                alignment: 'center',
-                color: '#111',
-                fillColor: '#e5e7eb',
-                margin: [0, 3, 0, 3],
-                border: [true, true, true, true],
+                fontSize: 8.5, bold: true, alignment: 'center',
+                color: '#111', fillColor: '#e5e7eb',
+                margin: [0, 3, 0, 3], border: [true, true, true, true],
             }],
             [{
                 stack: Array.isArray(bodyStack) ? bodyStack : [bodyStack],
@@ -134,29 +97,18 @@ const sectionBox = (title, bodyStack, margin = [0, 0, 0, 5]) => ({
     margin,
 });
 
-// ─── Math box (label + value) ────────────────────────────────────────────────
-
 const mathBox = (label, value) => ({
     table: {
         widths: [90],
         body: [
             [{
-                text: label,
-                fontSize: 7.5,
-                bold: true,
-                alignment: 'center',
-                fillColor: '#e5e7eb',
-                color: '#111',
-                margin: [0, 2, 0, 2],
-                border: [true, true, true, true],
+                text: label, fontSize: 7.5, bold: true, alignment: 'center',
+                fillColor: '#e5e7eb', color: '#111',
+                margin: [0, 2, 0, 2], border: [true, true, true, true],
             }],
             [{
-                text: value,
-                fontSize: 10,
-                bold: true,
-                alignment: 'center',
-                color: '#111',
-                margin: [0, 4, 0, 4],
+                text: value, fontSize: 10, bold: true, alignment: 'center',
+                color: '#111', margin: [0, 4, 0, 4],
                 border: [true, false, true, true],
             }],
         ],
@@ -164,19 +116,10 @@ const mathBox = (label, value) => ({
     layout: 'cleanBox',
 });
 
-// ─── Operator glyph ──────────────────────────────────────────────────────────
-
 const op = (ch) => ({
-    width: 14,
-    text: ch,
-    fontSize: 13,
-    bold: true,
-    color: '#111',
-    alignment: 'center',
-    margin: [0, 12, 0, 0],
+    width: 14, text: ch, fontSize: 13, bold: true,
+    color: '#111', alignment: 'center', margin: [0, 12, 0, 0],
 });
-
-// ─── Info table (label : value rows) ────────────────────────────────────────
 
 const infoTable = (rows) => ({
     table: {
@@ -190,37 +133,30 @@ const infoTable = (rows) => ({
     layout: 'noBorders',
 });
 
-// ─── Document builder ────────────────────────────────────────────────────────
+// ─── Document definition ─────────────────────────────────────────────────────
 
 const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
     const {
-        company_details,
-        client,
-        invoice_no,
-        issue_date,
-        due_date,
-        time_f,
-        quote_ref,
-        work_order_ref,
-        approved_by,
-        items = [],
-        total_qty,
-        total_ex_vat,
-        total_sd,
-        total_vat,
-        due_amount,
-        adjust_amount,
-        adjust_note,
-        amount_in_words,
-        terms_text,
-        bank_details,
-        disclaimer,
+        company_details, client, invoice_no, issue_date, due_date,
+        time_f, quote_ref, work_order_ref, approved_by,
+        items = [], total_qty, total_ex_vat, total_sd, total_vat,
+        due_amount, adjust_amount, adjust_note, amount_in_words,
+        terms_text, bank_details, disclaimer,
     } = data;
 
-    // ── HEADER ───────────────────────────────────────────────────────────────
+    // ── Header ───────────────────────────────────────────────────────────────
     const logoCell = logoDataUrl
-        ? { width: 95, image: logoDataUrl, fit: [90, 55], margin: [0, 0, 0, 0] }
+        ? { width: 95, image: logoDataUrl, fit: [90, 55] }
         : { width: 95, text: '' };
+
+    const centerTagBox = {
+        table: { widths: ['auto'], body: [[{ text: 'TAX INVOICE', fontSize: 9, bold: true, margin: [12, 2, 12, 2], border: [true, true, true, true], color: '#111' }]] },
+        layout: 'tagBox', alignment: 'center',
+    };
+    const mushakBox = {
+        table: { widths: ['auto'], body: [[{ text: 'MUSHAK 6.3', fontSize: 9, bold: true, margin: [8, 2, 8, 2], border: [true, true, true, true], color: '#111' }]] },
+        layout: 'tagBox',
+    };
 
     const header = {
         columns: [
@@ -228,33 +164,24 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
             {
                 width: '*',
                 stack: [
-                    { text: 'GOVERNMENT OF THE PEOPLE\'S REPUBLIC OF BANGLADESH', fontSize: 8.5, bold: true, alignment: 'center' },
+                    { text: "GOVERNMENT OF THE PEOPLE'S REPUBLIC OF BANGLADESH", fontSize: 8.5, bold: true, alignment: 'center' },
                     { text: 'NATIONAL BOARD OF REVENUE (TAX INVOICE)', fontSize: 8.5, bold: true, alignment: 'center', margin: [0, 1, 0, 3] },
-                    { alignment: 'center', table: { widths: ['auto'], body: [[{ text: 'TAX INVOICE', fontSize: 9, bold: true, margin: [12, 2, 12, 2], border: [true, true, true, true], color: '#111' }]] }, layout: 'tagBox' },
+                    centerTagBox,
                 ],
             },
-            { width: 85, ...tagBox('MUSHAK 6.3') },
+            { width: 85, stack: [{ text: '' }, mushakBox] },
         ],
         margin: [0, 0, 0, 6],
     };
 
-    // ── REGISTERED BUSINESS INFO ─────────────────────────────────────────────
-    const bizInfo = sectionBox(
-        'REGISTERED BUSINESS INFO',
-        [
-            { text: [{ text: 'Business Name:  ', bold: true }, company_details?.name || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
-            { text: [{ text: 'BIN Number:  ', bold: true }, company_details?.bin || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
-            { text: [{ text: 'Address:  ', bold: true }, company_details?.address || ''], alignment: 'center', fontSize: 9 },
-        ],
-    );
+    // ── Business info ─────────────────────────────────────────────────────────
+    const bizInfo = sectionBox('REGISTERED BUSINESS INFO', [
+        { text: [{ text: 'Business Name:  ', bold: true }, company_details?.name || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
+        { text: [{ text: 'BIN Number:  ', bold: true }, company_details?.bin || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
+        { text: [{ text: 'Address:  ', bold: true }, company_details?.address || ''], alignment: 'center', fontSize: 9 },
+    ]);
 
-    // ── BUYER / INVOICE INFO (2-col) ─────────────────────────────────────────
-    const buyerRows = [
-        ['Buyer Name', client?.name],
-        ['Buyer BIN', client?.bin],
-        ['Buyer Address', client?.address],
-    ];
-
+    // ── Buyer / Invoice info row ──────────────────────────────────────────────
     const invoiceRows = [
         ['Invoice Number', invoice_no],
         ['Invoice Issue Date', issue_date],
@@ -267,35 +194,24 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
 
     const twoCol = {
         columns: [
-            sectionBox('BUYER INFORMATION', [infoTable(buyerRows)], [0, 0, 0, 0]),
+            sectionBox('BUYER INFORMATION', [infoTable([['Buyer Name', client?.name], ['Buyer BIN', client?.bin], ['Buyer Address', client?.address]])], [0, 0, 0, 0]),
             { width: 6, text: '' },
             sectionBox('INVOICE INFORMATION', [infoTable(invoiceRows)], [0, 0, 0, 0]),
         ],
         margin: [0, 0, 0, 5],
-        columnGap: 0,
     };
 
-    // ── ITEMS TABLE (11 cols) ────────────────────────────────────────────────
-    // Total content width: 595.28 - 26 - 26 = 543.28 pts
+    // ── Items table ───────────────────────────────────────────────────────────
+    // Column widths sum to 543 pts (595.28 - 26*2 margins)
     const colW = [24, 120, 58, 22, 52, 50, 36, 42, 32, 42, 65];
-    // Sum: 24+120+58+22+52+50+36+42+32+42+65 = 543
 
-    const thStyle = (text, align = 'center', fill = '#e5e7eb') => ({
-        text, fontSize: 7.5, bold: true, alignment: align, fillColor: fill, color: '#111', margin: [0, 2, 0, 2],
+    const th = (text, align = 'center', fill = '#e5e7eb') => ({
+        text, fontSize: 7.5, bold: true, alignment: align,
+        fillColor: fill, color: '#111', margin: [0, 2, 0, 2],
     });
-
-    const numRow = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
-        .map(n => thStyle(n, 'center', '#f3f4f6'));
-
-    const hdrRow = [
-        thStyle('SL No.'), thStyle('Description', 'left'), thStyle('Unit of\nSupply'),
-        thStyle('Qty'), thStyle('Per Unit\nPrice'), thStyle('Total\nPrice'),
-        thStyle('SD Rate'), thStyle('SD Amount'), thStyle('VAT Rate'),
-        thStyle('VAT Amount'), thStyle('Total Price'),
-    ];
-
     const td = (text, align = 'center', bold = false, fill = '#ffffff') => ({
-        text: String(text ?? ''), fontSize: 7.5, alignment: align, bold, fillColor: fill, color: '#111', margin: [0, 1, 0, 1],
+        text: String(text ?? ''), fontSize: 7.5, alignment: align,
+        bold, fillColor: fill, color: '#111', margin: [0, 1, 0, 1],
     });
 
     const dataRows = items.map((item, idx) => {
@@ -329,12 +245,20 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
     ];
 
     const itemsTable = {
-        table: { widths: colW, body: [numRow, hdrRow, ...dataRows, totalRow] },
+        table: {
+            widths: colW,
+            body: [
+                ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'].map(n => th(n, 'center', '#f3f4f6')),
+                [th('SL No.'), th('Description', 'left'), th('Unit of\nSupply'), th('Qty'), th('Per Unit\nPrice'), th('Total\nPrice'), th('SD Rate'), th('SD Amount'), th('VAT Rate'), th('VAT Amount'), th('Total Price')],
+                ...dataRows,
+                totalRow,
+            ],
+        },
         layout: 'itemsGrid',
         margin: [0, 0, 0, 4],
     };
 
-    // ── WORDS & MATH BOXES ───────────────────────────────────────────────────
+    // ── Totals section ────────────────────────────────────────────────────────
     const wordsLine = {
         text: `Total in Words: ${amount_in_words || ''} Taka Only`,
         fontSize: 9, bold: true, italics: true, margin: [0, 0, 0, 5],
@@ -356,7 +280,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
         margin: [0, 0, 0, 6],
     };
 
-    // ── PAY BAR ──────────────────────────────────────────────────────────────
+    // ── Pay bar ───────────────────────────────────────────────────────────────
     const payBar = {
         table: {
             widths: ['*'],
@@ -371,11 +295,9 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
         margin: [0, 0, 0, 6],
     };
 
-    // ── TERMS & CONDITIONS ───────────────────────────────────────────────────
+    // ── Terms ─────────────────────────────────────────────────────────────────
     const termLines = (terms_text || '')
-        .split('\n')
-        .map(l => l.trim())
-        .filter(Boolean)
+        .split('\n').map(l => l.trim()).filter(Boolean)
         .map(l => ({ text: `• ${l.replace(/^[-•*]\s*/, '')}`, fontSize: 8, margin: [0, 1, 0, 0] }));
 
     const termsBox = {
@@ -386,49 +308,17 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
                     { text: 'Terms & Conditions', fontSize: 9.5, bold: true, decoration: 'underline', margin: [0, 0, 0, 4] },
                     ...(termLines.length ? termLines : [{ text: '', fontSize: 8 }]),
                 ],
-                margin: [10, 7, 10, 7],
-                border: [true, true, true, true],
+                margin: [10, 7, 10, 7], border: [true, true, true, true],
             }]],
         },
         layout: 'cleanBox',
         margin: [0, 0, 0, 5],
     };
 
-    // ── PAYMENT METHOD ───────────────────────────────────────────────────────
+    // ── Payment method ────────────────────────────────────────────────────────
     const logoCol = bankLogoDataUrl
         ? { width: 58, image: bankLogoDataUrl, fit: [50, 34], margin: [0, 2, 10, 2] }
         : { width: 58, text: (bank_details?.bank || '').substring(0, 3).toUpperCase(), fontSize: 12, bold: true, color: '#374151', alignment: 'center', margin: [0, 6, 10, 6] };
-
-    const dividerCol = {
-        width: 1,
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 0, y2: 38, lineWidth: 0.5, lineColor: '#dde0e3' }],
-    };
-
-    const bankInfo = {
-        width: '*',
-        margin: [10, 2, 0, 2],
-        stack: [
-            {
-                text: [
-                    { text: 'BANK: ', bold: true, color: '#374151', fontSize: 8.5 },
-                    { text: bank_details?.bank || '', bold: true, fontSize: 8.5 },
-                    { text: '   |   ', color: '#9ca3af', fontSize: 8.5 },
-                    { text: 'A/C NAME: ', bold: true, color: '#374151', fontSize: 8.5 },
-                    { text: bank_details?.ac_name || '', bold: true, fontSize: 8.5 },
-                ],
-                margin: [0, 0, 0, 4],
-            },
-            {
-                text: [
-                    { text: 'A/C NO.: ', bold: true, color: '#374151', fontSize: 8.5 },
-                    { text: bank_details?.ac_no || '', bold: true, fontSize: 8.5 },
-                    { text: '   |   ', color: '#9ca3af', fontSize: 8.5 },
-                    { text: 'ROUTING: ', bold: true, color: '#374151', fontSize: 8.5 },
-                    { text: bank_details?.routing || '', bold: true, fontSize: 8.5 },
-                ],
-            },
-        ],
-    };
 
     const paymentSection = {
         table: {
@@ -441,9 +331,18 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
                     margin: [0, 3, 0, 3], border: [true, true, true, true],
                 }],
                 [{
-                    columns: [logoCol, dividerCol, bankInfo],
-                    margin: [8, 6, 8, 6],
-                    border: [true, false, true, true],
+                    columns: [
+                        logoCol,
+                        { width: 1, canvas: [{ type: 'line', x1: 0, y1: 0, x2: 0, y2: 38, lineWidth: 0.5, lineColor: '#dde0e3' }] },
+                        {
+                            width: '*', margin: [10, 2, 0, 2],
+                            stack: [
+                                { text: [{ text: 'BANK: ', bold: true, color: '#374151', fontSize: 8.5 }, { text: bank_details?.bank || '', bold: true, fontSize: 8.5 }, { text: '   |   ', color: '#9ca3af', fontSize: 8.5 }, { text: 'A/C NAME: ', bold: true, color: '#374151', fontSize: 8.5 }, { text: bank_details?.ac_name || '', bold: true, fontSize: 8.5 }], margin: [0, 0, 0, 4] },
+                                { text: [{ text: 'A/C NO.: ', bold: true, color: '#374151', fontSize: 8.5 }, { text: bank_details?.ac_no || '', bold: true, fontSize: 8.5 }, { text: '   |   ', color: '#9ca3af', fontSize: 8.5 }, { text: 'ROUTING: ', bold: true, color: '#374151', fontSize: 8.5 }, { text: bank_details?.routing || '', bold: true, fontSize: 8.5 }] },
+                            ],
+                        },
+                    ],
+                    margin: [8, 6, 8, 6], border: [true, false, true, true],
                 }],
             ],
         },
@@ -451,21 +350,14 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
         margin: [0, 0, 0, 4],
     };
 
-    // ── FOOTER NOTE ──────────────────────────────────────────────────────────
+    // ── Footer ────────────────────────────────────────────────────────────────
     const footerNote = {
         stack: [
             { text: disclaimer || 'This is a system generated invoice.', fontSize: 7.5, alignment: 'center', color: '#6b7280', margin: [0, 0, 0, 2] },
-            {
-                text: [
-                    { text: 'For any issues please contact ', fontSize: 7.5, color: '#6b7280' },
-                    { text: 'finance@anexbusiness.com', fontSize: 7.5, color: '#1d4ed8', bold: true },
-                ],
-                alignment: 'center',
-            },
+            { text: [{ text: 'For any issues please contact ', fontSize: 7.5, color: '#6b7280' }, { text: 'finance@anexbusiness.com', fontSize: 7.5, color: '#1d4ed8', bold: true }], alignment: 'center' },
         ],
     };
 
-    // ── ADJUSTMENT NOTE ──────────────────────────────────────────────────────
     const adjNote = adjust_note
         ? [{ text: [{ text: 'Adjustment Note: ', bold: true }, adjust_note], fontSize: 8.5, color: '#374151', margin: [0, 0, 0, 4] }]
         : [];
@@ -474,37 +366,23 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
         pageSize: 'A4',
         pageMargins: [26, 20, 26, 15],
         defaultStyle: { font: 'Roboto', fontSize: 9, color: '#111111' },
-        content: [
-            header,
-            bizInfo,
-            twoCol,
-            itemsTable,
-            wordsLine,
-            ...adjNote,
-            mathRow,
-            payBar,
-            termsBox,
-            paymentSection,
-            footerNote,
-        ],
+        content: [header, bizInfo, twoCol, itemsTable, wordsLine, ...adjNote, mathRow, payBar, termsBox, paymentSection, footerNote],
     };
 };
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Download the invoice as a PDF using pdfmake.
- * @param {Object} data - Invoice data from useInvoice hook
- * @param {string} filename - Output filename
+ * Download invoice as PDF using pdfmake (vector, no canvas).
+ * @param {Object} data - from useInvoice hook
+ * @param {string} filename
  */
 export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
     try {
-        const [pdfMake, logoUrl, bankLogoUrl] = await Promise.all([
-            getPdfMake(),
+        const [logoUrl, bankLogoUrl] = await Promise.all([
             toDataUrl(data.company_logo),
             toDataUrl(data.bank_details?.logo),
         ]);
-
         const docDef = buildDoc(data, logoUrl, bankLogoUrl);
         pdfMake.createPdf(docDef).download(filename);
     } catch (err) {
