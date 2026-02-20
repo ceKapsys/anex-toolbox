@@ -303,7 +303,7 @@ const Settings = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={handleTestSMTP}
-                            disabled={testingSmtp || saving}
+                            disabled={testingSmtp || savingSection === 'smtp'}
                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-semibold disabled:opacity-50 hover:bg-blue-700"
                         >
                             {testingSmtp ? 'Testing...' : 'Test Connection'}
