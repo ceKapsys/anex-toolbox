@@ -13,69 +13,156 @@ const parseJson = (row) => {
     return row;
 };
 
-
-router.post('/', isAuthenticated, (req, res) => {
-    const d = req.body;
-    const client_snapshot = JSON.stringify(d.client_snapshot || d.client || {});
-    const bank_snapshot = JSON.stringify(d.bank_snapshot || d.bank_details || {});
-    const items_data = JSON.stringify(d.items_data || d.items || []);
-    const totals_data = JSON.stringify(d.totals_data || {});
-
-    const sql = `INSERT INTO invoices (
-        invoice_no, invoice_type, service_id, client_id, client_snapshot, bank_snapshot,
-        items_data, totals_data, quotation_ref, work_order_ref,
-        adjustment_amount, adjustment_note, issue_date, due_date, approved_by, 
-        terms_id, terms_text, status,
-        cogs, amount_paid, vds, tds, payment_date
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-
-    const params = [
-        d.invoice_no, d.invoice_type, d.service_id || null, d.client_id || null, client_snapshot, bank_snapshot,
-        items_data, totals_data, d.quotation_ref, d.work_order_ref,
-        d.adjustment_amount || 0, d.adjustment_note, d.issue_date, d.due_date, d.approved_by,
-        d.terms_id || null, d.terms_text || '', d.status || 'Draft',
-        d.cogs || 0, d.amount_paid || 0, d.vds || 0, d.tds || 0, d.payment_date || null
-    ];
-
-    db.run(sql, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Invoice Created' });
-    });
+// GET all invoices
+router.get('/', async (req, res) => {
+    try {
+        const invoices = await invoiceRepository.findAll({
+            orderBy: { id: 'desc' }
+        });
+        res.json(invoices.map(parseJson));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Update status
-router.patch('/:id/status', (req, res) => {
-    const { status } = req.body;
-    db.run("UPDATE invoices SET status = ? WHERE id = ?", [status, req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+// GET single invoice
+router.get('/:id', async (req, res) => {
+    try {
+        const invoice = await invoiceRepository.findById(req.params.id);
+        if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+        res.json(parseJson(invoice));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST create invoice
+router.post('/', isAuthenticated, async (req, res) => {
+    try {
+        const d = req.body;
+
+        const data = {
+            invoice_no: d.invoice_no,
+            invoice_type: d.invoice_type,
+            service_id: d.service_id || null,
+            client_id: d.client_id || null,
+            client_snapshot: JSON.stringify(d.client_snapshot || d.client || {}),
+            bank_snapshot: JSON.stringify(d.bank_snapshot || d.bank_details || {}),
+            items_data: JSON.stringify(d.items_data || d.items || []),
+            totals_data: JSON.stringify(d.totals_data || {}),
+            quotation_ref: d.quotation_ref || null,
+            work_order_ref: d.work_order_ref || null,
+            adjustment_amount: d.adjustment_amount || 0,
+            adjustment_note: d.adjustment_note || null,
+            issue_date: d.issue_date || null,
+            due_date: d.due_date || null,
+            approved_by: d.approved_by || null,
+            terms_id: d.terms_id || null,
+            terms_text: d.terms_text || '',
+            status: d.status || 'Draft',
+            cogs: d.cogs || 0,
+            amount_paid: d.amount_paid || 0,
+            vds: d.vds || 0,
+            tds: d.tds || 0,
+            payment_date: d.payment_date || null
+        };
+
+        const newInvoice = await invoiceRepository.create(data);
+        res.json({ id: newInvoice.id, message: 'Invoice Created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PATCH update invoice status
+router.patch('/:id/status', isAuthenticated, async (req, res) => {
+    try {
+        const { status } = req.body;
+        await invoiceRepository.update(req.params.id, { status });
         res.json({ message: 'Status updated' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Update payment details
-router.patch('/:id/payment', (req, res) => {
-    const { amount_paid, vds, tds, cogs, payment_date, status } = req.body;
-    const sql = `UPDATE invoices SET 
-        amount_paid = ?, 
-        vds = ?, 
-        tds = ?, 
-        cogs = ?, 
-        payment_date = ?, 
-        status = ? 
-        WHERE id = ?`;
-
-    db.run(sql, [amount_paid, vds, tds, cogs, payment_date, status, req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+// PATCH update payment details
+router.patch('/:id/payment', isAuthenticated, async (req, res) => {
+    try {
+        const { amount_paid, vds, tds, cogs, payment_date, status } = req.body;
+        await invoiceRepository.update(req.params.id, {
+            amount_paid,
+            vds,
+            tds,
+            cogs,
+            payment_date,
+            status
+        });
         res.json({ message: 'Payment details updated' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Delete invoice
-router.delete('/:id', isAuthenticated, (req, res) => {
-    db.run("DELETE FROM invoices WHERE id = ?", [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+// PATCH update invoice (general)
+router.patch('/:id', isAuthenticated, async (req, res) => {
+    try {
+        const d = req.body;
+        const data = {};
+
+        if (d.invoice_no !== undefined) data.invoice_no = d.invoice_no;
+        if (d.invoice_type !== undefined) data.invoice_type = d.invoice_type;
+        if (d.service_id !== undefined) data.service_id = d.service_id;
+        if (d.client_id !== undefined) data.client_id = d.client_id;
+        if (d.client_snapshot !== undefined) data.client_snapshot = JSON.stringify(d.client_snapshot);
+        if (d.bank_snapshot !== undefined) data.bank_snapshot = JSON.stringify(d.bank_snapshot);
+        if (d.items_data !== undefined) data.items_data = JSON.stringify(d.items_data);
+        if (d.totals_data !== undefined) data.totals_data = JSON.stringify(d.totals_data);
+        if (d.quotation_ref !== undefined) data.quotation_ref = d.quotation_ref;
+        if (d.work_order_ref !== undefined) data.work_order_ref = d.work_order_ref;
+        if (d.adjustment_amount !== undefined) data.adjustment_amount = d.adjustment_amount;
+        if (d.adjustment_note !== undefined) data.adjustment_note = d.adjustment_note;
+        if (d.issue_date !== undefined) data.issue_date = d.issue_date;
+        if (d.due_date !== undefined) data.due_date = d.due_date;
+        if (d.approved_by !== undefined) data.approved_by = d.approved_by;
+        if (d.terms_id !== undefined) data.terms_id = d.terms_id;
+        if (d.terms_text !== undefined) data.terms_text = d.terms_text;
+        if (d.status !== undefined) data.status = d.status;
+        if (d.cogs !== undefined) data.cogs = d.cogs;
+        if (d.amount_paid !== undefined) data.amount_paid = d.amount_paid;
+        if (d.vds !== undefined) data.vds = d.vds;
+        if (d.tds !== undefined) data.tds = d.tds;
+        if (d.payment_date !== undefined) data.payment_date = d.payment_date;
+
+        if (Object.keys(data).length === 0) return res.json({ message: 'No changes provided' });
+
+        data.updated_at = new Date();
+        await invoiceRepository.update(req.params.id, data);
+        res.json({ message: 'Invoice updated successfully' });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE invoice
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        await invoiceRepository.delete(req.params.id);
         res.json({ message: 'Invoice deleted' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

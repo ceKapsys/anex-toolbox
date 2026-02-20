@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const authRepository = require('../repositories/AuthRepository');
-const prisma = require('../lib/prisma'); // For update last_login if not in repo, or use repo's update
 
 // Helper function to generate session ID
 const generateSessionId = () => {

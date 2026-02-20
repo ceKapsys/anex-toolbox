@@ -16,42 +16,56 @@ router.get('/', async (req, res) => {
 });
 
 // Get single term
-router.get('/:id', (req, res) => {
-    db.get("SELECT * FROM terms WHERE id = ?", [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) return res.status(404).json({ error: 'Term not found' });
-        res.json(row);
-    });
+router.get('/:id', async (req, res) => {
+    try {
+        const term = await termRepository.findById(req.params.id);
+        if (!term) return res.status(404).json({ error: 'Term not found' });
+        res.json(term);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Create term
-router.post('/', isAuthenticated, (req, res) => {
-    const { name, description, type } = req.body;
-    const sql = "INSERT INTO terms (name, description, type) VALUES (?, ?, ?)";
-
-    db.run(sql, [name, description, type || 'invoice'], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Term created' });
-    });
+router.post('/', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description, type } = req.body;
+        const newTerm = await termRepository.create({
+            name,
+            description,
+            type: type || 'invoice'
+        });
+        res.json({ id: newTerm.id, message: 'Term created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Update term
-router.patch('/:id', (req, res) => {
-    const { name, description, type } = req.body;
-    const sql = "UPDATE terms SET name = ?, description = ?, type = ? WHERE id = ?";
-
-    db.run(sql, [name, description, type, req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.patch('/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description, type } = req.body;
+        await termRepository.update(req.params.id, { name, description, type });
         res.json({ message: 'Term updated' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Term not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Delete term
-router.delete('/:id', isAuthenticated, (req, res) => {
-    db.run("DELETE FROM terms WHERE id = ?", [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        await termRepository.delete(req.params.id);
         res.json({ message: 'Term deleted' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Term not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

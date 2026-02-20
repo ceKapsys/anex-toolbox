@@ -16,42 +16,52 @@ router.get('/', async (req, res) => {
 });
 
 // Get single quotation term
-router.get('/:id', (req, res) => {
-    db.get("SELECT * FROM quotation_terms WHERE id = ?", [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) return res.status(404).json({ error: 'Term not found' });
-        res.json(row);
-    });
+router.get('/:id', async (req, res) => {
+    try {
+        const term = await quotationTermRepository.findById(req.params.id);
+        if (!term) return res.status(404).json({ error: 'Term not found' });
+        res.json(term);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Create quotation term
-router.post('/', isAuthenticated, (req, res) => {
-    const { name, description } = req.body;
-    const sql = "INSERT INTO quotation_terms (name, description) VALUES (?, ?)";
-
-    db.run(sql, [name, description], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Quotation Term created' });
-    });
+router.post('/', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const newTerm = await quotationTermRepository.create({ name, description });
+        res.json({ id: newTerm.id, message: 'Quotation Term created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Update quotation term
-router.patch('/:id', (req, res) => {
-    const { name, description } = req.body;
-    const sql = "UPDATE quotation_terms SET name = ?, description = ? WHERE id = ?";
-
-    db.run(sql, [name, description, req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.patch('/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        await quotationTermRepository.update(req.params.id, { name, description });
         res.json({ message: 'Quotation Term updated' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Term not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Delete quotation term
-router.delete('/:id', isAuthenticated, (req, res) => {
-    db.run("DELETE FROM quotation_terms WHERE id = ?", [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        await quotationTermRepository.delete(req.params.id);
         res.json({ message: 'Quotation Term deleted' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Term not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

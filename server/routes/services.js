@@ -16,42 +16,52 @@ router.get('/', async (req, res) => {
 });
 
 // Get single service
-router.get('/:id', (req, res) => {
-    db.get("SELECT * FROM services WHERE id = ?", [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) return res.status(404).json({ error: 'Service not found' });
-        res.json(row);
-    });
+router.get('/:id', async (req, res) => {
+    try {
+        const service = await serviceRepository.findById(req.params.id);
+        if (!service) return res.status(404).json({ error: 'Service not found' });
+        res.json(service);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Create service
-router.post('/', isAuthenticated, (req, res) => {
-    const { name, description, shortcode } = req.body;
-    const sql = "INSERT INTO services (name, description, shortcode) VALUES (?, ?, ?)";
-
-    db.run(sql, [name, description, shortcode], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Service created' });
-    });
+router.post('/', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description, shortcode } = req.body;
+        const newService = await serviceRepository.create({ name, description, shortcode });
+        res.json({ id: newService.id, message: 'Service created' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Update service
-router.patch('/:id', (req, res) => {
-    const { name, description, shortcode } = req.body;
-    const sql = "UPDATE services SET name = ?, description = ?, shortcode = ? WHERE id = ?";
-
-    db.run(sql, [name, description, shortcode, req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.patch('/:id', isAuthenticated, async (req, res) => {
+    try {
+        const { name, description, shortcode } = req.body;
+        await serviceRepository.update(req.params.id, { name, description, shortcode });
         res.json({ message: 'Service updated' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Delete service
-router.delete('/:id', isAuthenticated, (req, res) => {
-    db.run("DELETE FROM services WHERE id = ?", [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        await serviceRepository.delete(req.params.id);
         res.json({ message: 'Service deleted' });
-    });
+    } catch (err) {
+        if (err.code === 'P2025') {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;
