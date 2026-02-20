@@ -491,9 +491,9 @@ const QuotationGenerator = () => {
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-auto p-8 bg-[#f6f3f1] flex justify-center">
+                <div className="flex-1 overflow-auto p-8 bg-[#f6f3f1] flex justify-center items-start">
                     {/* Scale down the preview to fit */}
-                    <div className="origin-top transform scale-[0.65] shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
+                    <div className="origin-top transform scale-[0.55]" style={{ width: '794px', minWidth: '794px' }}>
                         <QuotationTemplate ref={templateRef} data={data} />
                     </div>
                 </div>

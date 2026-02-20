@@ -36,24 +36,26 @@ router.post('/', isAuthenticated, async (req, res) => {
         const items = JSON.stringify(d.items || []);
 
         const data = {
-            client_id: d.client_id,
-            to_company: d.to_company,
-            to_address: d.to_address,
-            attn: d.attn,
-            type: d.type,
-            date: d.date,
-            vat: d.vat,
-            discount: d.discount,
+            client_id: d.client_id ? parseInt(d.client_id, 10) : null,
+            to_company: d.to_company || null,
+            to_address: d.to_address || null,
+            attn: d.attn || null,
+            type: d.type || null,
+            date: d.date || null,
+            vat: d.vat !== undefined && d.vat !== '' ? parseFloat(d.vat) : null,
+            discount: d.discount !== undefined && d.discount !== '' ? parseFloat(d.discount) : null,
             items,
-            terms: d.terms,
-            contact_name: d.contact_name,
-            total: d.total,
-            status: d.status || 'Draft'
+            terms: d.terms || null,
+            contact_name: d.contact_name || null,
+            total: d.total !== undefined && d.total !== '' ? parseFloat(d.total) : null,
+            status: d.status || 'Draft',
+            work_order_number: d.quotation_number || null
         };
 
         const newQuotation = await quotationRepository.create(data);
         res.json({ id: newQuotation.id, message: 'Quotation Created' });
     } catch (err) {
+        console.error('Quotation Create Error:', err);
         res.status(500).json({ error: err.message });
     }
 });
