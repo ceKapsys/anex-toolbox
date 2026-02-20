@@ -1,13 +1,20 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Eye, Download } from 'lucide-react';
 import InvoiceTemplate from '../templates/InvoiceTemplate';
-import { generatePDF } from '../../utils/pdfGenerator';
+import { downloadInvoicePDF } from '../../utils/invoicePdfMake';
 
 const InvoicePreview = ({ data }) => {
-    const pdfRef = useRef();
+    const [generating, setGenerating] = useState(false);
 
-    const downloadPDF = () => {
-        generatePDF(pdfRef.current, `${data.invoice_no}.pdf`);
+    const handleDownload = async () => {
+        setGenerating(true);
+        try {
+            await downloadInvoicePDF(data, `${data.invoice_no || 'invoice'}.pdf`);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
+        } finally {
+            setGenerating(false);
+        }
     };
 
     return (
@@ -16,25 +23,19 @@ const InvoicePreview = ({ data }) => {
                 <h2 className="font-semibold text-slate-800 flex items-center gap-2">
                     <Eye className="w-4 h-4 text-slate-400" /> Preview
                 </h2>
-                <button onClick={downloadPDF} className="bg-[#0f0f10] hover:bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition">
-                    <Download className="w-4 h-4" /> Download PDF
+                <button
+                    onClick={handleDownload}
+                    disabled={generating}
+                    className="bg-[#0f0f10] hover:bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition disabled:opacity-60"
+                >
+                    <Download className="w-4 h-4" />
+                    {generating ? 'Generating...' : 'Download PDF'}
                 </button>
             </div>
             <div className="flex-1 overflow-auto p-8 bg-[#f6f3f1] flex justify-center">
                 <div className="origin-top transform scale-[0.65] shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
                     <InvoiceTemplate data={data} />
                 </div>
-            </div>
-            <div
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: '-10000px',
-                    visibility: 'hidden',
-                    pointerEvents: 'none'
-                }}
-            >
-                <InvoiceTemplate ref={pdfRef} data={data} />
             </div>
         </div>
     );
