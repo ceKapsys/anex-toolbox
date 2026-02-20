@@ -59,6 +59,12 @@ export const generatePDF = (element, filename = 'document.pdf') => {
             unit: 'mm',
             format: 'a4',
             orientation: 'portrait'
+        },
+        pagebreak: {
+            mode: ['avoid-all'],
+            before: [],
+            after: [],
+            avoid: '.anex-page, .quotation-page'
         }
     };
 

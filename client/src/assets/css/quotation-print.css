@@ -1,8 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Reddit+Sans:ital,wght@0,200..900;1,200..900&display=swap');
 
 /**
  * A4 Quotation Print Stylesheet
- * Redigned to match Dark Teal Reference
+ * Matches reference design exactly:
+ *  - Dark teal header (#1a4f5a)
+ *  - Rounded info box with divider
+ *  - Items table with alternating rows
+ *  - Summary: Subtotal (gray), VAT (teal-gray), Total (dark teal)
+ *  - Footer grid: Terms | Contact
  */
 
 /* ===========================
@@ -14,7 +19,7 @@
 }
 
 /* ===========================
-   Page Layout
+   Global Reset & Page Layout
    =========================== */
 .quotation-page {
     width: 210mm;
@@ -28,12 +33,13 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family: 'Reddit Sans', 'Trebuchet MS', Arial, sans-serif;
     color: #333;
-    line-height: 1.3;
+    font-size: 10pt;
+    line-height: 1.35;
 }
 
-/* Reset all default margins/paddings inside the PDF page */
+/* Scoped reset */
 .quotation-page *,
 .quotation-page *::before,
 .quotation-page *::after {
@@ -47,28 +53,22 @@
     padding-left: 15px;
 }
 
-.quotation-page li {
-    margin: 0;
-    padding: 0;
-}
-
 @media print {
     .quotation-page {
         margin: 0;
         box-shadow: none;
-        min-height: 296mm;
         height: 296mm;
-        /* Force height for reliable footer placement */
+        page-break-after: avoid;
+        page-break-inside: avoid;
     }
 }
 
 /* ===========================
-   Header Section
+   Header
    =========================== */
 .quotation-header {
     width: 100%;
-    text-align: center;
-    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .header-image {
@@ -76,17 +76,19 @@
     height: auto;
     display: block;
     margin: 0;
+    padding: 0;
+    line-height: 0;
 }
 
 .quotation-title {
-    font-family: 'Reddit Sans', sans-serif;
-    font-size: 42px;
-    font-weight: 700;
+    font-family: 'Reddit Sans', Arial, sans-serif;
+    font-size: 36px;
+    font-weight: 800;
     color: #1a4f5a;
-    /* Dark Teal from reference */
-    letter-spacing: 1px;
-    margin: 8px 0;
+    letter-spacing: 3px;
     text-align: center;
+    padding: 10px 0 8px;
+    text-transform: uppercase;
 }
 
 /* ===========================
@@ -94,69 +96,63 @@
    =========================== */
 .quotation-content {
     flex: 1;
-    /* Takes up remaining space */
-    padding: 0 40px;
-    /* Side padding */
+    padding: 0 32px;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 /* ===========================
-   Info Box (Rounded)
+   Info Box
    =========================== */
 .quotation-info-box {
-    border: 1px solid #9ca3af;
-    /* Gray border */
-    border-radius: 12px;
-    /* Rounded corners */
+    border: 1px solid #b0b8c1;
+    border-radius: 10px;
     display: flex;
     overflow: hidden;
-    margin-bottom: 25px;
+    margin-bottom: 14px;
 }
 
 .info-column {
     width: 50%;
-    padding: 15px 20px;
-    font-size: 10pt;
+    padding: 12px 16px;
 }
 
 .info-column:first-child {
-    border-right: 1px solid #9ca3af;
-    /* Divider */
+    border-right: 1px solid #b0b8c1;
 }
 
-/* Left Column Styling */
 .info-label-header {
-    font-size: 9pt;
+    font-size: 8.5pt;
     font-weight: 700;
     color: #1a4f5a;
-    /* Dark Teal */
     text-transform: uppercase;
-    margin-bottom: 8px;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 4px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .client-name {
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 700;
-    color: #000;
-    margin-bottom: 4px;
+    color: #111;
+    margin-bottom: 3px;
+    line-height: 1.3;
 }
 
 .client-address {
     font-size: 9pt;
-    color: #374151;
+    color: #444;
     line-height: 1.4;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     white-space: pre-line;
 }
 
 .client-attention {
     font-size: 9pt;
+    color: #444;
     margin-top: 4px;
-    color: #374151;
 }
 
 .attention-label {
@@ -165,28 +161,32 @@
     margin-right: 4px;
 }
 
-/* Right Column Styling */
+/* Right column rows */
 .info-row {
     display: flex;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     align-items: baseline;
 }
 
 .info-label {
-    width: 70px;
+    width: 65px;
     font-weight: 700;
     color: #1a4f5a;
+    font-size: 9.5pt;
+    flex-shrink: 0;
 }
 
 .info-colon {
-    width: 15px;
+    width: 14px;
     font-weight: 700;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .info-value {
     font-weight: 700;
-    color: #000;
+    color: #111;
+    font-size: 9.5pt;
     flex: 1;
 }
 
@@ -194,7 +194,7 @@
    Items Table
    =========================== */
 .quotation-items {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .items-table {
@@ -202,37 +202,50 @@
     border-collapse: collapse;
 }
 
+.items-table thead tr {
+    background-color: #1a4f5a;
+}
+
 .items-table th {
     background-color: #1a4f5a;
-    /* Dark Teal Header */
     color: #fff;
-    padding: 8px 12px;
+    padding: 7px 10px;
     text-align: left;
-    font-size: 10pt;
+    font-size: 9.5pt;
     font-weight: 700;
-    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+/* Alternating row colors */
+.items-table tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.items-table tbody tr:nth-child(even) {
+    background-color: #f7f9fa;
 }
 
 .items-table td {
-    padding: 8px 12px;
-    font-size: 10pt;
+    padding: 7px 10px;
+    font-size: 9.5pt;
     vertical-align: top;
     color: #333;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #eef0f1;
 }
 
-/* Column Widths & Alignments */
+/* Column widths */
 .col-sl {
-    width: 8%;
+    width: 7%;
     text-align: center;
 }
 
 .col-item {
+    width: auto;
     text-align: left;
 }
 
 .col-qty {
-    width: 10%;
+    width: 8%;
     text-align: center;
 }
 
@@ -242,34 +255,46 @@
 }
 
 .col-price {
-    width: 15%;
+    width: 13%;
     text-align: right;
 }
 
 .col-total {
-    width: 15%;
+    width: 13%;
     text-align: right;
+}
+
+.col-sl,
+.col-qty,
+.col-unit,
+.col-price,
+.col-total {
+    white-space: nowrap;
 }
 
 .cell-center {
     text-align: center;
 }
 
+.cell-item {
+    text-align: left;
+}
+
 .cell-right {
     text-align: right;
 }
 
-/* Item Styling */
 .item-title {
     font-weight: 700;
-    color: #000;
-    margin-bottom: 2px;
+    color: #111;
+    margin-bottom: 1px;
 }
 
 .item-description {
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: #6b7280;
     white-space: pre-wrap;
+    line-height: 1.3;
 }
 
 /* ===========================
@@ -278,140 +303,141 @@
 .financial-summary {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .summary-table {
-    width: 45%;
-    border-collapse: separate;
-    border-spacing: 0 1px;
+    width: 48%;
+    border-collapse: collapse;
 }
 
 .summary-row td {
-    padding: 6px 12px;
+    padding: 5px 10px;
     font-size: 10pt;
 }
 
-.summary-label {
+/* Subtotal row: plain with gray value bg */
+.summary-row:nth-child(1) .summary-label {
     text-align: right;
     font-weight: 600;
     color: #374151;
-    padding-right: 20px;
+    padding-right: 16px;
 }
 
-.summary-value {
+.summary-row:nth-child(1) .summary-value {
     text-align: right;
     font-weight: 700;
-    color: #000;
-    background-color: #9ca3af;
-    /* Default Gray for Subtotal */
+    background-color: #bdc5c9;
     color: #fff;
     min-width: 120px;
 }
 
-/* Specific Colors for Rows */
-/* Subtotal - Light Gray/Blueish */
-.summary-row:nth-child(1) .summary-value {
-    background-color: #9ca3af;
-    /* Slate  */
+/* VAT row: medium teal */
+.summary-row:nth-child(2) .summary-label {
+    text-align: right;
+    font-weight: 600;
+    color: #374151;
+    padding-right: 16px;
 }
 
-/* VAT - Teal Gray */
 .summary-row:nth-child(2) .summary-value {
-    background-color: #6b7280;
-    /* Darker Slate */
+    text-align: right;
+    font-weight: 700;
+    background-color: #5f929e;
+    color: #fff;
+    min-width: 120px;
 }
 
-/* Total - Dark Teal */
+/* Total row: dark teal */
 .summary-row.summary-total .summary-label {
-    font-weight: 700;
+    text-align: right;
+    font-weight: 800;
     font-size: 11pt;
-    color: #000;
+    color: #111;
+    padding-right: 16px;
 }
 
 .summary-row.summary-total .summary-value {
-    background-color: #587782;
-    /* Muted Teal from Reference */
+    text-align: right;
+    background-color: #1a4f5a;
     color: #fff;
-    font-size: 12pt;
+    font-size: 11.5pt;
     font-weight: 800;
+    min-width: 120px;
 }
 
-
 /* ===========================
-   Footer Grid (Terms & Contact)
+   Footer Grid (Terms + Contact)
    =========================== */
 .footer-grid {
     display: flex;
-    justify-content: space-between;
-    gap: 30px;
+    gap: 16px;
     margin-top: auto;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 .footer-box {
     flex: 1;
-    border: 1px solid #9ca3af;
-    border-radius: 12px;
-    padding: 15px;
-    background-color: #f3f4f6;
-    /* Light gray fill */
+    border: 1px solid #b0b8c1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    background-color: #f9fafb;
 }
 
 .footer-box-title {
-    font-size: 10pt;
+    font-size: 9.5pt;
     font-weight: 700;
     text-decoration: underline;
-    margin: 0 0 8px 0;
-    color: #000;
+    margin-bottom: 6px;
+    color: #111;
 }
 
 .footer-box-content {
-    font-size: 9pt;
-    line-height: 1.4;
+    font-size: 8.5pt;
+    line-height: 1.45;
     color: #374151;
 }
 
 .terms-list {
-    margin: 0;
-    padding-left: 15px;
+    padding-left: 14px;
 }
 
-/* Contact Info Styling */
+.terms-list li {
+    margin-bottom: 2px;
+}
+
 .contact-name {
     font-weight: 800;
-    color: #000;
+    color: #111;
     font-size: 10pt;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .contact-designation {
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: #4b5563;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .contact-info {
-    font-size: 9pt;
-    margin-bottom: 2px;
+    font-size: 8.5pt;
+    margin-bottom: 1px;
+    color: #374151;
 }
 
-
 /* ===========================
-   Global Footer (Bottom Bleed)
+   Global Footer (Bottom)
    =========================== */
 .quotation-footer {
     width: 100%;
-    margin-top: auto;
-    /* Pushes to bottom of flex container */
+    flex-shrink: 0;
 }
 
 .disclaimer {
     text-align: center;
-    font-size: 8pt;
+    font-size: 7.5pt;
     color: #6b7280;
-    padding: 4px 40px;
-    margin: 0;
+    padding: 4px 32px;
 }
 
 .footer-image {
