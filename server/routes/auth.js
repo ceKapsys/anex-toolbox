@@ -168,21 +168,36 @@ setInterval(async () => {
     }
 }, 3600000); // Run every hour
 
-// POST /api/auth/seed - Create default admin user if none exists
+// POST /api/auth/seed - Create or reset default admin user
 router.post('/seed', async (req, res) => {
     try {
-        const users = await authRepository.findAll();
-        if (users.length > 0) {
-            return res.json({ message: 'Admin user already exists', seeded: false });
-        }
-
+        const defaultUsername = 'emamul.haque@anexbusiness.com';
         const defaultPassword = 'ABS#tool_26';
         const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
+        // Check if user with this username already exists
+        let user = await authRepository.findByUsername(defaultUsername);
+
+        if (user) {
+            // Update existing user's password
+            await authRepository.update(user.id, {
+                password_hash: passwordHash,
+                email: defaultUsername,
+                full_name: 'Emamul Haque',
+                updated_at: new Date()
+            });
+            return res.json({
+                message: 'Admin user password reset',
+                seeded: true,
+                user: { id: user.id, username: user.username }
+            });
+        }
+
+        // Create new user
         const newUser = await authRepository.create({
-            username: 'emamul.haque@anexbusiness.com',
+            username: defaultUsername,
             password_hash: passwordHash,
-            email: 'emamul.haque@anexbusiness.com',
+            email: defaultUsername,
             full_name: 'Emamul Haque'
         });
 
