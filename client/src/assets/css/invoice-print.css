@@ -24,12 +24,9 @@ body {
 .anex-page {
     width: 210mm;
     min-height: 296mm;
-    /* Slightly less than 297mm to prevent overflow */
     max-height: 296mm;
-    /* Force single page height */
     overflow: hidden;
-    /* Clip any potential overflow */
-    padding: 40px 30px;
+    padding: 20px 25px;
     background: #fff;
     margin: 0 auto;
     box-sizing: border-box;
@@ -49,19 +46,16 @@ body {
 }
 
 .content-section {
-    margin-bottom: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     page-break-inside: avoid;
     overflow: hidden;
-    /* Clearfix behavior */
 }
 
 /* --- Header Section --- */
 .header-grid {
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     overflow: hidden;
-    /* Clearfix */
 }
 
 .logo-box {
@@ -112,7 +106,7 @@ body {
     border: 1px solid #111;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     clear: both;
 }
 
@@ -121,16 +115,16 @@ body {
     text-align: center;
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 11px;
-    padding: 6px;
+    font-size: 10px;
+    padding: 4px;
     border-bottom: 1px solid #111;
     color: #000;
 }
 
 .section-body {
-    padding: 10px;
-    font-size: 11px;
-    line-height: 1.5;
+    padding: 6px 10px;
+    font-size: 10px;
+    line-height: 1.4;
     text-align: left;
 }
 
@@ -149,8 +143,7 @@ body {
 .anex-row {
     width: 100%;
     overflow: hidden;
-    /* Clearfix */
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 
 /* 
@@ -259,16 +252,16 @@ table.inv-table {
 
 /* --- Totals & Words --- */
 .words {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     font-style: italic;
-    margin: 15px 0;
+    margin: 8px 0;
 }
 
 /* --- Math Row (centered calculation) --- */
 .math-container {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     width: 100%;
 }
 
@@ -286,22 +279,21 @@ table.inv-table {
 
 .math-box {
     border: 1px solid #111;
-    width: 130px;
-    /* Fixed width */
+    width: 110px;
 }
 
 .math-head {
     background: #f3f4f6;
     border-bottom: 1px solid #111;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 5px;
+    padding: 3px;
 }
 
 .math-val {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 8px;
+    padding: 5px;
 }
 
 .math-op {
@@ -314,11 +306,11 @@ table.inv-table {
     background: #111827;
     color: #fff;
     text-align: center;
-    padding: 10px;
+    padding: 6px;
     border-radius: 4px;
     font-weight: 700;
-    font-size: 12px;
-    margin-bottom: 20px;
+    font-size: 11px;
+    margin-bottom: 10px;
     clear: both;
 }
 
@@ -326,10 +318,10 @@ table.inv-table {
 .terms {
     border: 1px solid #111;
     border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 20px;
-    font-size: 10px;
-    line-height: 1.5;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 9px;
+    line-height: 1.4;
 }
 
 .terms h3 {
@@ -359,20 +351,17 @@ table.inv-table {
     width: 100%;
     border: 1px solid #111;
     border-radius: 8px;
-    /* Rounded corners for the container */
     overflow: hidden;
-    /* Clips children to rounded corners */
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     background: #fff;
 }
 
 .payment-head {
     background: #dbeafe;
-    /* Light blue */
-    padding: 8px;
+    padding: 5px;
     text-align: center;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     border-bottom: 1px solid #111;
 }
@@ -461,10 +450,10 @@ table.inv-table {
 /* --- Footer Note --- */
 .foot-note {
     text-align: center;
-    font-size: 9px;
+    font-size: 8px;
     color: #666;
-    margin-top: 10px;
-    line-height: 1.4;
+    margin-top: 5px;
+    line-height: 1.3;
     clear: both;
 }
 

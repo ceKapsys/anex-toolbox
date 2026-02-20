@@ -536,6 +536,8 @@ const InvoicesList = () => {
                 docType="invoice"
                 clientEmail={mailModal.invoice?.client_snapshot?.email || ''}
                 docNumber={mailModal.invoice?.invoice_no || ''}
+                defaultSubject={settings?.invoice_mail_subject || ''}
+                defaultBody={settings?.invoice_mail_template || ''}
             />
 
             {/* Hidden PDF Template */}

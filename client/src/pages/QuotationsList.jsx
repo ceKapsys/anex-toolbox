@@ -17,6 +17,7 @@ const QuotationsList = () => {
     const [workOrderNumber, setWorkOrderNumber] = useState('');
     const [selectedQuotationId, setSelectedQuotationId] = useState(null);
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
+    const [settings, setSettings] = useState(null);
     const navigate = useNavigate();
 
     const loadQuotations = async () => {
@@ -35,6 +36,15 @@ const QuotationsList = () => {
 
     useEffect(() => {
         loadQuotations();
+        const loadSettings = async () => {
+            try {
+                const s = await api.get('/settings');
+                setSettings(s || {});
+            } catch (err) {
+                console.error('Error loading settings:', err);
+            }
+        };
+        loadSettings();
     }, []);
 
     const calculateStats = (data) => {
@@ -345,7 +355,7 @@ const QuotationsList = () => {
                     <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
                         <h2 className="text-xl font-semibold text-slate-900 mb-4">Enter Work Order Number</h2>
                         <p className="text-sm text-slate-500 mb-6">This quotation is being marked as Passed. Please enter the corresponding Work Order Number.</p>
-                        
+
                         <input
                             type="text"
                             value={workOrderNumber}
@@ -383,7 +393,9 @@ const QuotationsList = () => {
                 onSend={handleSendEmail}
                 docType="quotation"
                 clientEmail={mailModal.quotation?.attn_email || ''}
-                docNumber={mailModal.quotation?.id ? `QT-${mailModal.quotation.id}` : ''}
+                docNumber={mailModal.quotation?.quotation_number || (mailModal.quotation?.id ? `QT-${mailModal.quotation.id}` : '')}
+                defaultSubject={settings?.quotation_mail_subject || ''}
+                defaultBody={settings?.quotation_mail_template || ''}
             />
         </div>
     );

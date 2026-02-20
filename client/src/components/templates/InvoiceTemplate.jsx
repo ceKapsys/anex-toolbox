@@ -92,7 +92,7 @@ const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
                                     <tr><td className="info-label-cell">Invoice Number</td><td className="info-sep-cell">:</td><td className="info-val-cell">{invoice_no}</td></tr>
                                     <tr><td className="info-label-cell">Invoice Issue Date</td><td className="info-sep-cell">:</td><td className="info-val-cell">{issue_date}</td></tr>
                                     <tr><td className="info-label-cell">Invoice Due Date</td><td className="info-sep-cell">:</td><td className="info-val-cell">{due_date}</td></tr>
-                                    {time_f && <tr><td className="info-label-cell">Timestamp</td><td className="info-sep-cell">:</td><td className="info-val-cell">{time_f}</td></tr>}
+                                    {time_f && <tr><td className="info-label-cell">Invoice Time </td><td className="info-sep-cell">:</td><td className="info-val-cell">{time_f}</td></tr>}
                                     {quote_ref && <tr><td className="info-label-cell">Quotation Ref</td><td className="info-sep-cell">:</td><td className="info-val-cell">{quote_ref}</td></tr>}
                                     {work_order_ref && <tr><td className="info-label-cell">Work Order Ref</td><td className="info-sep-cell">:</td><td className="info-val-cell">{work_order_ref}</td></tr>}
                                     {approved_by && <tr><td className="info-label-cell">Approved By</td><td className="info-sep-cell">:</td><td className="info-val-cell">{approved_by}</td></tr>}

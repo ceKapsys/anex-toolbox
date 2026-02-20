@@ -31,7 +31,11 @@ const Settings = () => {
         rubber_stamp: '',
         signatories: [],
         quotation_disclaimer: '',
-        invoice_disclaimer: ''
+        invoice_disclaimer: '',
+        invoice_mail_subject: '',
+        quotation_mail_subject: '',
+        invoice_mail_template: '',
+        quotation_mail_template: ''
     });
     const [loading, setLoading] = useState(true);
     const [savingSection, setSavingSection] = useState(null);
@@ -99,7 +103,11 @@ const Settings = () => {
                 rubber_stamp: data.rubber_stamp || '',
                 signatories: typeof data.signatories === 'object' ? (Array.isArray(data.signatories) ? data.signatories : []) : (data.signatories ? parseValue(data.signatories) : []),
                 quotation_disclaimer: data.quotation_disclaimer || '',
-                invoice_disclaimer: data.invoice_disclaimer || ''
+                invoice_disclaimer: data.invoice_disclaimer || '',
+                invoice_mail_subject: data.invoice_mail_subject || '',
+                quotation_mail_subject: data.quotation_mail_subject || '',
+                invoice_mail_template: data.invoice_mail_template || '',
+                quotation_mail_template: data.quotation_mail_template || ''
             });
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -662,6 +670,102 @@ const Settings = () => {
                         >
                             <Save size={18} /> {savingSection === 'signatories' ? 'Saving...' : 'Save Contacts'}
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Email Templates */}
+            <section className="bg-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+                <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Email Templates</h2>
+                    <p className="text-xs text-slate-400 mb-4">Use <code className="bg-slate-100 px-1 py-0.5 rounded">{'{{number}}'}</code> in subject to insert the document number.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Invoice Mail Subject */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Invoice Mail Subject</label>
+                                <button
+                                    onClick={() => handleSave('inv_subject', 'invoice_mail_subject', settings.invoice_mail_subject)}
+                                    disabled={savingSection === 'inv_subject'}
+                                    className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+                                >
+                                    {savingSection === 'inv_subject' ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                value={settings.invoice_mail_subject}
+                                onChange={(e) => setSettings(prev => ({ ...prev, invoice_mail_subject: e.target.value }))}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm"
+                                placeholder="Invoice {{number}} - ANEX Business Solutions"
+                            />
+                        </div>
+
+                        {/* Quotation Mail Subject */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Quotation Mail Subject</label>
+                                <button
+                                    onClick={() => handleSave('quot_subject', 'quotation_mail_subject', settings.quotation_mail_subject)}
+                                    disabled={savingSection === 'quot_subject'}
+                                    className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+                                >
+                                    {savingSection === 'quot_subject' ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                value={settings.quotation_mail_subject}
+                                onChange={(e) => setSettings(prev => ({ ...prev, quotation_mail_subject: e.target.value }))}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm"
+                                placeholder="Quotation {{number}} - ANEX Business Solutions"
+                            />
+                        </div>
+
+                        {/* Invoice Mail Body */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Invoice Mail Body Template</label>
+                                <button
+                                    onClick={() => handleSave('inv_template', 'invoice_mail_template', settings.invoice_mail_template)}
+                                    disabled={savingSection === 'inv_template'}
+                                    className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+                                >
+                                    {savingSection === 'inv_template' ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                            <textarea
+                                value={settings.invoice_mail_template}
+                                onChange={(e) => setSettings(prev => ({ ...prev, invoice_mail_template: e.target.value }))}
+                                rows="6"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-sm font-mono text-xs"
+                                placeholder="<p>Dear Client,</p><p>Please find attached the invoice.</p><p>Best regards,<br/>ANEX Team</p>"
+                            ></textarea>
+                            <p className="text-xs text-slate-400 mt-1">HTML format supported.</p>
+                        </div>
+
+                        {/* Quotation Mail Body */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Quotation Mail Body Template</label>
+                                <button
+                                    onClick={() => handleSave('quot_template', 'quotation_mail_template', settings.quotation_mail_template)}
+                                    disabled={savingSection === 'quot_template'}
+                                    className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
+                                >
+                                    {savingSection === 'quot_template' ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                            <textarea
+                                value={settings.quotation_mail_template}
+                                onChange={(e) => setSettings(prev => ({ ...prev, quotation_mail_template: e.target.value }))}
+                                rows="6"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-sm font-mono text-xs"
+                                placeholder="<p>Dear Client,</p><p>Please find attached the quotation.</p><p>Best regards,<br/>ANEX Team</p>"
+                            ></textarea>
+                            <p className="text-xs text-slate-400 mt-1">HTML format supported.</p>
+                        </div>
                     </div>
                 </div>
             </section>

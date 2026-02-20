@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, AlertCircle } from 'lucide-react';
 
-const SendMailModal = ({ isOpen, onClose, onSend, docType = 'invoice', clientEmail = '', docNumber = '' }) => {
+const SendMailModal = ({ isOpen, onClose, onSend, docType = 'invoice', clientEmail = '', docNumber = '', defaultSubject = '', defaultBody = '' }) => {
     const [formData, setFormData] = useState({
         to: '',
         cc: '',
@@ -19,12 +19,12 @@ const SendMailModal = ({ isOpen, onClose, onSend, docType = 'invoice', clientEma
             }));
         }
 
-        // Set default subject and body based on document type
-        const defaultSubject = docType === 'invoice' 
-            ? `Invoice ${docNumber}`
-            : `Quotation ${docNumber}`;
+        // Use settings-based defaults if provided, otherwise use hardcoded fallback
+        const subject = defaultSubject
+            ? defaultSubject.replace('{{number}}', docNumber).replace('{{doc_number}}', docNumber)
+            : (docType === 'invoice' ? `Invoice ${docNumber}` : `Quotation ${docNumber}`);
 
-        const defaultBody = docType === 'invoice'
+        const body = defaultBody || (docType === 'invoice'
             ? `<p>Dear Client,</p>
 <p>Please find attached the invoice for your reference.</p>
 <p>If you have any questions, please feel free to contact us.</p>
@@ -32,14 +32,14 @@ const SendMailModal = ({ isOpen, onClose, onSend, docType = 'invoice', clientEma
             : `<p>Dear Client,</p>
 <p>Please find attached the quotation for your reference.</p>
 <p>If you have any questions, please feel free to contact us.</p>
-<p>Best regards,<br/>ANEX Team</p>`;
+<p>Best regards,<br/>ANEX Team</p>`);
 
         setFormData(prev => ({
             ...prev,
-            subject: defaultSubject,
-            body: defaultBody
+            subject: subject,
+            body: body
         }));
-    }, [isOpen, clientEmail, docType, docNumber]);
+    }, [isOpen, clientEmail, docType, docNumber, defaultSubject, defaultBody]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -109,8 +109,8 @@ const SendMailModal = ({ isOpen, onClose, onSend, docType = 'invoice', clientEma
             <div className="w-full max-w-2xl rounded-2xl bg-white shadow-lg max-h-[90vh] overflow-y-auto">
                 <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900">Send {docType === 'invoice' ? 'Invoice' : 'Quotation'}</h2>
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="text-slate-400 hover:text-slate-600 transition"
                     >
                         <X className="h-5 w-5" />
