@@ -34,6 +34,34 @@ body {
     color: #111;
 }
 
+/* Reset all default margins/paddings inside the PDF page */
+.anex-page *,
+.anex-page *::before,
+.anex-page *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Restore only what we intentionally set */
+.anex-page p,
+.anex-page div,
+.anex-page span {
+    margin: 0;
+    padding: 0;
+}
+
+.anex-page ul,
+.anex-page ol {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.anex-page li {
+    margin: 0;
+    padding: 0;
+}
+
 /* --- Utilities --- */
 .clearfix::after {
     content: "";

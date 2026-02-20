@@ -19,11 +19,8 @@
 .quotation-page {
     width: 210mm;
     min-height: 296mm;
-    /* Slightly reduced to prevent overflow */
     max-height: 296mm;
-    /* Force height */
     overflow: hidden;
-    /* Hide overflow */
     background: #ffffff;
     margin: 0 auto;
     position: relative;
@@ -31,10 +28,28 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    /* This pushes footer to bottom */
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     color: #333;
     line-height: 1.3;
+}
+
+/* Reset all default margins/paddings inside the PDF page */
+.quotation-page *,
+.quotation-page *::before,
+.quotation-page *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.quotation-page ul,
+.quotation-page ol {
+    padding-left: 15px;
+}
+
+.quotation-page li {
+    margin: 0;
+    padding: 0;
 }
 
 @media print {
