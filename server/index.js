@@ -33,6 +33,17 @@ app.use('/api/terms', termsRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/quotation-terms', require('./routes/quotation_terms'));
 
+// Health check to verify env vars on Vercel
+app.get('/api/health', (req, res) => {
+    const hasDbUrl = !!process.env.DATABASE_URL;
+    res.json({
+        status: hasDbUrl ? 'ok' : 'error',
+        database_url_set: hasDbUrl,
+        node_env: process.env.NODE_ENV || 'not set',
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.get('/', (req, res) => {
     res.send('ANEX Tools API Running');
 });
