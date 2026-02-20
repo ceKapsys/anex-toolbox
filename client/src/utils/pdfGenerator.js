@@ -17,18 +17,42 @@ export const generatePDF = (element, filename = 'document.pdf') => {
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
-            scale: 2, // Higher scale for better text quality
-            useCORS: true, // Enable cross-origin images (logos)
-            logging: false, // Reduce console noise
-            scrollY: 0, // Prevent scroll offset issues
-            // Standard A4 width at 96 DPI is approx 794px. 
-            // We set windowWidth slightly larger or exact to ensure styles don't break.
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
             windowWidth: 794,
             onclone: (doc) => {
-                // Force sRGB color space to avoid OKLCH issues if possible
-                const style = doc.createElement('style');
-                style.innerHTML = '* { color-interpolation: sRGB !important; }';
-                doc.head.appendChild(style);
+                // Force sRGB color space to avoid OKLCH issues
+                const colorStyle = doc.createElement('style');
+                colorStyle.innerHTML = '* { color-interpolation: sRGB !important; }';
+                doc.head.appendChild(colorStyle);
+
+                // Inject aggressive element reset to remove all browser default margins
+                const resetStyle = doc.createElement('style');
+                resetStyle.innerHTML = `
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    h1, h2, h3, h4, h5, h6,
+                    p, ul, ol, li,
+                    blockquote, pre, hr,
+                    figure, figcaption,
+                    dl, dd, dt {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    ul, ol {
+                        padding-left: 18px !important;
+                    }
+                    table {
+                        border-collapse: collapse !important;
+                    }
+                `;
+                doc.head.appendChild(resetStyle);
             }
         },
         jsPDF: {
