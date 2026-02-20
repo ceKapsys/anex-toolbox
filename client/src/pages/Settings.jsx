@@ -34,7 +34,7 @@ const Settings = () => {
         invoice_disclaimer: ''
     });
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [savingSection, setSavingSection] = useState(null);
     const [message, setMessage] = useState(null);
     const [testingSmtp, setTestingSmtp] = useState(false);
 
@@ -109,8 +109,8 @@ const Settings = () => {
         }
     };
 
-    const handleSave = async (key, value) => {
-        setSaving(true);
+    const handleSave = async (section, key, value) => {
+        setSavingSection(section);
         setMessage(null);
         try {
             await api.settings.update(key, value);
@@ -120,7 +120,25 @@ const Settings = () => {
             console.error('Error saving settings:', error);
             setMessage({ type: 'error', text: 'Failed to save settings.' });
         } finally {
-            setSaving(false);
+            setSavingSection(null);
+            setTimeout(() => setMessage(null), 3000);
+        }
+    };
+
+    const handleSaveMultiple = async (section, pairs) => {
+        setSavingSection(section);
+        setMessage(null);
+        try {
+            for (const [key, value] of pairs) {
+                await api.settings.update(key, value);
+                setSettings(prev => ({ ...prev, [key]: value }));
+            }
+            setMessage({ type: 'success', text: 'Settings saved successfully.' });
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            setMessage({ type: 'error', text: 'Failed to save settings.' });
+        } finally {
+            setSavingSection(null);
             setTimeout(() => setMessage(null), 3000);
         }
     };
@@ -138,7 +156,7 @@ const Settings = () => {
                 password: settings.smtp_password
             };
             await api.settings.update('smtp_config', smtpConfig);
-            
+
             // Test the connection
             await api.email.testSMTP();
             setMessage({ type: 'success', text: 'SMTP connection successful!' });
@@ -152,7 +170,7 @@ const Settings = () => {
     };
 
     const handleSaveSMTPConfig = async () => {
-        setSaving(true);
+        setSavingSection('smtp');
         setMessage(null);
         try {
             const smtpConfig = {
@@ -168,7 +186,7 @@ const Settings = () => {
             console.error('Error saving SMTP settings:', error);
             setMessage({ type: 'error', text: 'Failed to save SMTP settings.' });
         } finally {
-            setSaving(false);
+            setSavingSection(null);
             setTimeout(() => setMessage(null), 3000);
         }
     };
@@ -244,21 +262,18 @@ const Settings = () => {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-slate-800">General Configuration</h2>
                     <button
-                        onClick={() => {
-                            handleSave('menu_icon', settings.menu_icon);
-                            handleSave('company_logo', settings.company_logo);
-                        }}
-                        disabled={saving}
+                        onClick={() => handleSaveMultiple('general', [['menu_icon', settings.menu_icon], ['company_logo', settings.company_logo]])}
+                        disabled={savingSection === 'general'}
                         className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                     >
-                        <Save size={18} /> Save
+                        <Save size={18} /> {savingSection === 'general' ? 'Saving...' : 'Save'}
                     </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-gray-700">Menu Icon (Dashboard)</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={settings.menu_icon}
                             onChange={(e) => setSettings(prev => ({ ...prev, menu_icon: e.target.value }))}
                             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm"
@@ -287,10 +302,10 @@ const Settings = () => {
                         </button>
                         <button
                             onClick={handleSaveSMTPConfig}
-                            disabled={saving || testingSmtp}
+                            disabled={savingSection === 'smtp' || testingSmtp}
                             className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                         >
-                            <Save size={18} /> Save config
+                            <Save size={18} /> {savingSection === 'smtp' ? 'Saving...' : 'Save config'}
                         </button>
                     </div>
                 </div>
@@ -322,7 +337,7 @@ const Settings = () => {
                             placeholder="your-email@microsoft365.com"
                         />
                     </div>
-                    
+
                     <div className="md:col-span-2 pt-4 border-t">
                         <h3 className="font-semibold text-slate-800 mb-4">SMTP Configuration</h3>
                     </div>
@@ -378,11 +393,11 @@ const Settings = () => {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-slate-800">Company Information</h2>
                     <button
-                        onClick={() => handleSave('company_details', settings.company_details)}
-                        disabled={saving}
+                        onClick={() => handleSave('company', 'company_details', settings.company_details)}
+                        disabled={savingSection === 'company'}
                         className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                     >
-                        <Save size={18} /> Save
+                        <Save size={18} /> {savingSection === 'company' ? 'Saving...' : 'Save'}
                     </button>
                 </div>
                 <div className="grid grid-cols-1 gap-6">
@@ -431,11 +446,11 @@ const Settings = () => {
                             <Plus size={18} /> Add Bank
                         </button>
                         <button
-                            onClick={() => handleSave('bank_details', settings.bank_details)}
-                            disabled={saving}
+                            onClick={() => handleSave('bank', 'bank_details', settings.bank_details)}
+                            disabled={savingSection === 'bank'}
                             className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                         >
-                            <Save size={18} /> Save
+                            <Save size={18} /> {savingSection === 'bank' ? 'Saving...' : 'Save'}
                         </button>
                     </div>
                 </div>
@@ -488,9 +503,9 @@ const Settings = () => {
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Logo</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
+                                    <input
+                                        type="file"
+                                        accept="image/*"
                                         onChange={async (e) => {
                                             if (e.target.files?.[0]) {
                                                 const base64 = await fileToBase64(e.target.files[0]);
@@ -515,15 +530,11 @@ const Settings = () => {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-slate-800">Quotation Branding</h2>
                     <button
-                        onClick={() => {
-                            handleSave('quotation_header', settings.quotation_header);
-                            handleSave('quotation_footer', settings.quotation_footer);
-                            handleSave('rubber_stamp', settings.rubber_stamp);
-                        }}
-                        disabled={saving}
+                        onClick={() => handleSaveMultiple('branding', [['quotation_header', settings.quotation_header], ['quotation_footer', settings.quotation_footer], ['rubber_stamp', settings.rubber_stamp]])}
+                        disabled={savingSection === 'branding'}
                         className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                     >
-                        <Save size={18} /> Save
+                        <Save size={18} /> {savingSection === 'branding' ? 'Saving...' : 'Save'}
                     </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -549,7 +560,7 @@ const Settings = () => {
             <section className="bg-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 <div className="mb-6">
                     <h2 className="text-lg font-semibold text-slate-800 mb-4">Contacts & Terms</h2>
-                    
+
                     <div className="mb-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-sm font-semibold text-slate-700">Signatories / Contacts</h3>
@@ -607,11 +618,11 @@ const Settings = () => {
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-medium text-gray-700">Quotation Disclaimer</label>
                                 <button
-                                    onClick={() => handleSave('quotation_disclaimer', settings.quotation_disclaimer)}
-                                    disabled={saving}
+                                    onClick={() => handleSave('q_disclaimer', 'quotation_disclaimer', settings.quotation_disclaimer)}
+                                    disabled={savingSection === 'q_disclaimer'}
                                     className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
                                 >
-                                    Save
+                                    {savingSection === 'q_disclaimer' ? 'Saving...' : 'Save'}
                                 </button>
                             </div>
                             <textarea
@@ -626,11 +637,11 @@ const Settings = () => {
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-sm font-medium text-gray-700">Invoice Disclaimer</label>
                                 <button
-                                    onClick={() => handleSave('invoice_disclaimer', settings.invoice_disclaimer)}
-                                    disabled={saving}
+                                    onClick={() => handleSave('i_disclaimer', 'invoice_disclaimer', settings.invoice_disclaimer)}
+                                    disabled={savingSection === 'i_disclaimer'}
                                     className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
                                 >
-                                    Save
+                                    {savingSection === 'i_disclaimer' ? 'Saving...' : 'Save'}
                                 </button>
                             </div>
                             <textarea
@@ -645,11 +656,11 @@ const Settings = () => {
 
                     <div className="mt-4">
                         <button
-                            onClick={() => handleSave('signatories', settings.signatories)}
-                            disabled={saving}
+                            onClick={() => handleSave('signatories', 'signatories', settings.signatories)}
+                            disabled={savingSection === 'signatories'}
                             className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                         >
-                            <Save size={18} /> Save Contacts
+                            <Save size={18} /> {savingSection === 'signatories' ? 'Saving...' : 'Save Contacts'}
                         </button>
                     </div>
                 </div>
