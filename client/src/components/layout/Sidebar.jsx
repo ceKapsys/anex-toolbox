@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, FileSpreadsheet, Users, Wrench, ListChecks, Settings, BarChart3, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
+import { version } from '../../../package.json';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
@@ -77,7 +78,7 @@ const Sidebar = () => {
                         <p className="text-xs text-slate-400">{user?.email || 'Admin'}</p>
                     </div>
                 </div>
-                
+
                 <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 hover:bg-white/70 hover:text-red-600 transition-all"
@@ -85,6 +86,7 @@ const Sidebar = () => {
                     <LogOut className="h-5 w-5" />
                     <span>Logout</span>
                 </button>
+                <p className="text-center text-[10px] text-slate-300 pt-2">v{version}</p>
             </div>
         </aside>
     );
