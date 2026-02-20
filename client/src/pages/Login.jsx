@@ -15,11 +15,11 @@ export default function Login() {
         setIsLoading(true);
 
         const result = await login(username, password);
-        
+
         if (result.success) {
             navigate('/dashboard');
         }
-        
+
         setIsLoading(false);
     };
 
@@ -104,9 +104,8 @@ export default function Login() {
                 </form>
 
                 <div className="mt-8 text-center">
-                    <p className="text-xs text-gray-500">
-                        Default credentials: <br />
-                        <span className="font-mono">admin / admin123</span>
+                    <p className="text-xs text-gray-400">
+                        ANEX Tools &bull; Professional Suite
                     </p>
                 </div>
             </div>

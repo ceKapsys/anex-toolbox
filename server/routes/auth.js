@@ -16,17 +16,39 @@ const getSessionExpiry = () => {
     return expiry.toISOString();
 };
 
-// Middleware to check if user is authenticated (Bypassed for Auto-Login)
+// Middleware to check if user is authenticated
 const isAuthenticated = async (req, res, next) => {
-    // Auto-login mock user
-    req.user = {
-        id: 1,
-        username: 'emamul.haque@anexbusiness.com',
-        email: 'emamul.haque@anexbusiness.com',
-        full_name: 'Anex Admin'
-    };
-    req.sessionId = 'auto-generated-session';
-    next();
+    const sessionId = req.headers['x-session-id'];
+
+    if (!sessionId) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+        const session = await authRepository.findSessionById(sessionId);
+
+        if (!session) {
+            return res.status(401).json({ error: 'Invalid or expired session' });
+        }
+
+        // Check if session has expired
+        if (new Date(session.expires_at) < new Date()) {
+            await authRepository.deleteSession(sessionId);
+            return res.status(401).json({ error: 'Session expired' });
+        }
+
+        req.user = {
+            id: session.user.id,
+            username: session.user.username,
+            email: session.user.email,
+            full_name: session.user.full_name
+        };
+        req.sessionId = sessionId;
+        next();
+    } catch (err) {
+        console.error('Auth middleware error:', err);
+        return res.status(500).json({ error: 'Authentication error' });
+    }
 };
 
 // POST /api/auth/login
@@ -145,5 +167,34 @@ setInterval(async () => {
         console.error('Error cleaning up sessions:', err);
     }
 }, 3600000); // Run every hour
+
+// POST /api/auth/seed - Create default admin user if none exists
+router.post('/seed', async (req, res) => {
+    try {
+        const users = await authRepository.findAll();
+        if (users.length > 0) {
+            return res.json({ message: 'Admin user already exists', seeded: false });
+        }
+
+        const defaultPassword = 'ABS#tool_26';
+        const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+        const newUser = await authRepository.create({
+            username: 'emamul.haque@anexbusiness.com',
+            password_hash: passwordHash,
+            email: 'emamul.haque@anexbusiness.com',
+            full_name: 'Emamul Haque'
+        });
+
+        res.json({
+            message: 'Default admin user created',
+            seeded: true,
+            user: { id: newUser.id, username: newUser.username }
+        });
+    } catch (err) {
+        console.error('Seed Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = { router, isAuthenticated };

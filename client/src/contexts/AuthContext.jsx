@@ -11,10 +11,14 @@ export const AuthProvider = ({ children }) => {
 
     const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-    // Check if user is already logged in (on mount) - Auto Login logic
+    // Check if user is already logged in (on mount)
     useEffect(() => {
-        // Always attempt verification to get user data, regardless of session ID existence
-        verifySession(localStorage.getItem('sessionId') || 'auto-session');
+        const storedSessionId = localStorage.getItem('sessionId');
+        if (storedSessionId) {
+            verifySession(storedSessionId);
+        } else {
+            setLoading(false);
+        }
     }, []);
 
     const verifySession = async (sid) => {
