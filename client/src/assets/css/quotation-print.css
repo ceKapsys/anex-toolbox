@@ -1,4 +1,6 @@
-/* Trebuchet MS font throughout — no external font imports */
+/* Trebuchet MS font throughout — except Quotation Title (Rubik 700) */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@700&display=swap');
+
 
 /**
  * A4 Quotation Print Stylesheet
@@ -82,9 +84,9 @@
 }
 
 .quotation-title {
-    font-family: 'Trebuchet MS', Arial, sans-serif;
+    font-family: 'Rubik', sans-serif !important;
     font-size: 36px;
-    font-weight: 800;
+    font-weight: 700;
     color: #1a4f5a;
     letter-spacing: 3px;
     text-align: center;
@@ -235,31 +237,37 @@
 }
 
 /* Column widths */
+.items-table th.col-sl,
 .col-sl {
     width: 7%;
     text-align: center;
 }
 
+.items-table th.col-item,
 .col-item {
     width: auto;
     text-align: left;
 }
 
+.items-table th.col-qty,
 .col-qty {
     width: 8%;
     text-align: center;
 }
 
+.items-table th.col-unit,
 .col-unit {
     width: 10%;
     text-align: center;
 }
 
+.items-table th.col-price,
 .col-price {
     width: 13%;
     text-align: right;
 }
 
+.items-table th.col-total,
 .col-total {
     width: 13%;
     text-align: right;

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Download, Eye, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Download, Eye, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import QuotationTemplate from '../components/templates/QuotationTemplate';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -222,8 +222,17 @@ const QuotationGenerator = () => {
         setData({ ...data, items: newItems });
     };
 
-    const downloadPDF = () => {
-        generatePDF(pdfRef.current, `${data.quotation_number}.pdf`);
+    const [generating, setGenerating] = useState(false);
+
+    const downloadPDF = async () => {
+        setGenerating(true);
+        try {
+            await generatePDF(pdfRef.current, `${data.quotation_number}.pdf`);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
+        } finally {
+            setGenerating(false);
+        }
     };
 
     const handleSave = async () => {
@@ -485,9 +494,18 @@ const QuotationGenerator = () => {
                     </h2>
                     <button
                         onClick={downloadPDF}
-                        className="bg-[#0f0f10] hover:bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition"
+                        disabled={generating}
+                        className="bg-[#0f0f10] hover:bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition disabled:opacity-60"
                     >
-                        <Download className="w-4 h-4" /> Download PDF
+                        {generating ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Download className="w-4 h-4" /> Download PDF
+                            </>
+                        )}
                     </button>
                 </div>
 

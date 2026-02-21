@@ -9,14 +9,14 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 // Wire fonts for Roboto fallback (needed by pdfmake internals)
 pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts.vfs ?? pdfFonts;
 
-// Use Helvetica — built-in PDF standard font (no embedding needed)
+// Use the bundled explicitly (Roboto) instead of standard fonts to avoid .afm missing errors
 pdfMake.fonts = {
-    Helvetica: {
-        normal: 'Helvetica',
-        bold: 'Helvetica-Bold',
-        italics: 'Helvetica-Oblique',
-        bolditalics: 'Helvetica-BoldOblique',
-    },
+    Roboto: {
+        normal: 'Roboto-Regular.ttf',
+        bold: 'Roboto-Medium.ttf',
+        italics: 'Roboto-Italic.ttf',
+        bolditalics: 'Roboto-Italic.ttf'
+    }
 };
 
 // Custom table layouts
@@ -378,7 +378,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
     return {
         pageSize: 'A4',
         pageMargins: [26, 20, 26, 15],
-        defaultStyle: { font: 'Helvetica', fontSize: 9, color: '#111111' },
+        defaultStyle: { font: 'Roboto', fontSize: 9, color: '#111111' },
         content: [header, bizInfo, twoCol, itemsTable, wordsLine, ...adjNote, mathRow, payBar, termsBox, paymentSection, footerNote],
     };
 };

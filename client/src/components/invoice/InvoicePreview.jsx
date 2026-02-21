@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Download, Loader2 } from 'lucide-react';
 import InvoiceTemplate from '../templates/InvoiceTemplate';
 import { downloadInvoicePDF } from '../../utils/invoicePdfMake';
 
@@ -28,8 +28,15 @@ const InvoicePreview = ({ data }) => {
                     disabled={generating}
                     className="bg-[#0f0f10] hover:bg-black text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition disabled:opacity-60"
                 >
-                    <Download className="w-4 h-4" />
-                    {generating ? 'Generating...' : 'Download PDF'}
+                    {generating ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="w-4 h-4" /> Download PDF
+                        </>
+                    )}
                 </button>
             </div>
             <div className="flex-1 overflow-auto p-8 bg-[#f6f3f1] flex justify-center">

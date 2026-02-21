@@ -30,6 +30,12 @@ export const generatePDF = (element, filename = 'document.pdf') => {
                 colorStyle.innerHTML = '* { color-interpolation: sRGB !important; }';
                 doc.head.appendChild(colorStyle);
 
+                // Inject Rubik font into the cloned doc to ensure it renders correctly
+                const fontLink = doc.createElement('link');
+                fontLink.rel = 'stylesheet';
+                fontLink.href = 'https://fonts.googleapis.com/css2?family=Rubik:wght@700&display=swap';
+                doc.head.appendChild(fontLink);
+
                 // Inject aggressive element reset to remove all browser default margins
                 const resetStyle = doc.createElement('style');
                 resetStyle.innerHTML = `
@@ -70,9 +76,10 @@ export const generatePDF = (element, filename = 'document.pdf') => {
 
     // Execute generation
     console.log('Starting html2pdf generation for:', filename);
-    html2pdf().set(opt).from(element).save().then(() => {
+    return html2pdf().set(opt).from(element).save().then(() => {
         console.log('PDF Generation successful');
     }).catch(err => {
         console.error('PDF Generation failed:', err);
+        throw err;
     });
 };

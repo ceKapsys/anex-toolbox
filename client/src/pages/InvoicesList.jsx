@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle } from 'lucide-react';
+import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import InvoiceTemplate from '../components/templates/InvoiceTemplate';
@@ -228,11 +228,15 @@ const InvoicesList = () => {
         }
     };
 
+    const [downloadingId, setDownloadingId] = useState(null);
+
     const handleDownload = (invoice) => {
         if (!settings) {
             alert('Settings not loaded yet. Please try again.');
             return;
         }
+
+        setDownloadingId(invoice.id);
 
         const items = invoice.items_data || [];
         const totals = invoice.totals_data || {};
@@ -293,10 +297,14 @@ const InvoicesList = () => {
     useEffect(() => {
         if (pdfData && pdfRef.current) {
             setTimeout(() => {
-                generatePDF(pdfRef.current, `${pdfData.invoice_no}.pdf`);
-                setTimeout(() => {
+                generatePDF(pdfRef.current, `${pdfData.invoice_no}.pdf`).then(() => {
                     setPdfData(null);
-                }, 1000);
+                    setDownloadingId(null);
+                }).catch((err) => {
+                    console.error('PDF generation failed:', err);
+                    setPdfData(null);
+                    setDownloadingId(null);
+                });
             }, 500);
         }
     }, [pdfData]);
@@ -495,9 +503,18 @@ const InvoicesList = () => {
                             </Link>
                             <button
                                 onClick={() => handleDownload(inv)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition font-medium"
+                                disabled={downloadingId === inv.id}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition font-medium disabled:opacity-60"
                             >
-                                <Download className="h-3.5 w-3.5" /> Download
+                                {downloadingId === inv.id ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="h-3.5 w-3.5" /> Download
+                                    </>
+                                )}
                             </button>
                             <button
                                 onClick={() => openMailModal(inv)}
