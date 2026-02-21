@@ -53,20 +53,20 @@ const bangladeshHolidays2026 = [
 const calculateDueDate = (issueDate) => {
     const date = new Date(issueDate);
     let workingDaysAdded = 0;
-    
+
     while (workingDaysAdded < 7) {
         date.setDate(date.getDate() + 1);
-        
+
         const dayOfWeek = date.getDay();
         const dateString = date.toISOString().split('T')[0];
-        
+
         // Skip Friday (5) and Saturday (6) - Bangladesh weekend
         // Skip government holidays
         if (dayOfWeek !== 5 && dayOfWeek !== 6 && !bangladeshHolidays2026.includes(dateString)) {
             workingDaysAdded++;
         }
     }
-    
+
     return new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Dhaka',
         year: 'numeric',
@@ -93,7 +93,7 @@ export const useInvoice = () => {
         client_id: null,
         client: { name: '', bin: '', address: '' },
         items: [
-            { desc: '', unit: 'Month', qty: 1, price: 0, sd: 0, vat: 5, base_total: 0, sd_amount: 0, vat_amount: 0, line_total: 0 }
+            { desc: '', unit: '', qty: 1, price: 0, sd: 0, vat: 5, base_total: 0, sd_amount: 0, vat_amount: 0, line_total: 0 }
         ],
         total_qty: 1,
         total_ex_vat: 0,

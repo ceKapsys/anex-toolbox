@@ -13,6 +13,7 @@ const Settings = () => {
     const [settings, setSettings] = useState({
         menu_icon: '',
         company_logo: '',
+        app_favicon: '',
         mail_from_name: '',
         mail_from_email: '',
         use_smtp: false,
@@ -107,8 +108,20 @@ const Settings = () => {
                 invoice_mail_subject: data.invoice_mail_subject || '',
                 quotation_mail_subject: data.quotation_mail_subject || '',
                 invoice_mail_template: data.invoice_mail_template || '',
-                quotation_mail_template: data.quotation_mail_template || ''
+                quotation_mail_template: data.quotation_mail_template || '',
+                app_favicon: data.app_favicon || '',
             });
+
+            // Apply favicon dynamically if saved
+            if (data.app_favicon) {
+                let link = document.querySelector("link[rel*='icon']");
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    document.head.appendChild(link);
+                }
+                link.href = data.app_favicon;
+            }
         } catch (error) {
             console.error('Error fetching settings:', error);
             setMessage({ type: 'error', text: 'Failed to load settings.' });
@@ -270,14 +283,14 @@ const Settings = () => {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-slate-800">General Configuration</h2>
                     <button
-                        onClick={() => handleSaveMultiple('general', [['menu_icon', settings.menu_icon], ['company_logo', settings.company_logo]])}
+                        onClick={() => handleSaveMultiple('general', [['menu_icon', settings.menu_icon], ['company_logo', settings.company_logo], ['app_favicon', settings.app_favicon]])}
                         disabled={savingSection === 'general'}
                         className="flex items-center gap-2 px-4 py-2 bg-[#0f0f10] text-white rounded-full text-xs font-semibold disabled:opacity-50"
                     >
                         <Save size={18} /> {savingSection === 'general' ? 'Saving...' : 'Save'}
                     </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-gray-700">Menu Icon (Dashboard)</label>
                         <input
@@ -292,6 +305,25 @@ const Settings = () => {
                         <label className="block text-sm font-medium text-gray-700">Company Logo</label>
                         <input type="file" accept="image/*" onChange={(e) => handleAssetUpload('company_logo', e.target.files?.[0])} />
                         {settings.company_logo && <img src={settings.company_logo} alt="Company Logo" className="h-16 object-contain" />}
+                    </div>
+                    <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">App Favicon</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const base64 = await fileToBase64(file);
+                                setSettings(prev => ({ ...prev, app_favicon: base64 }));
+                            }}
+                        />
+                        {settings.app_favicon && (
+                            <div className="flex items-center gap-3">
+                                <img src={settings.app_favicon} alt="Favicon" className="h-8 w-8 object-contain border border-slate-200 rounded" />
+                                <span className="text-xs text-slate-500">Current favicon (save to apply)</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

@@ -40,12 +40,12 @@ const QuotationGenerator = () => {
             attention: ''
         },
         items: [
-            { title: 'Web Development Service', description: 'Full stack development', qty: 1, unit: 'Job', price: 50000, line_total: 50000 }
+            { title: '', description: '', qty: 1, unit: '', price: 0, line_total: 0 }
         ],
         vat_percentage: 15,
-        subtotal: 50000,
-        vat_amount: 7500,
-        grand_total: 57500,
+        subtotal: 0,
+        vat_amount: 0,
+        grand_total: 0,
         terms_conditions: '',
         contact_details: {
             name: '',
