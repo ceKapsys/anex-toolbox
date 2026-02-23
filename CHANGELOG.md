@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.9.8] - 2026-02-23
+
+### Fixed
+- **Quotation Update 500 Error**: Fixed type coercion in PUT /api/quotations/:id route
+  - Added proper parseFloat/parseInt for numeric fields (vat, discount, total, client_id)
+  - Fixed client_id sending 0 instead of null when no client selected
+  - Added error logging to quotation update route for better debugging
+
 ## [3.9.7] - 2026-02-23
 
 ### Fixed
