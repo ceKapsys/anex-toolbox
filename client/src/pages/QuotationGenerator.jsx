@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Download, Eye, Save, ArrowLeft, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import QuotationTemplate from '../components/templates/QuotationTemplate';
 import { generatePDF } from '../utils/pdfGenerator';
 import clsx from 'clsx';
@@ -9,6 +9,9 @@ import api from '../lib/api';
 const QuotationGenerator = () => {
     const templateRef = useRef();
     const pdfRef = useRef();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const quotationId = searchParams.get('id');
     const [activeTab, setActiveTab] = useState('edit'); // edit | preview
     const [saving, setSaving] = useState(false);
     const [clients, setClients] = useState([]);
@@ -109,13 +112,56 @@ const QuotationGenerator = () => {
                 setQuotations(Array.isArray(res) ? res : []);
             } catch (err) { console.error(err); }
         };
+        const loadQuotationById = async (id) => {
+            try {
+                const quotation = await api.quotations.get(id);
+                if (quotation) {
+                    // Populate form with existing quotation data
+                    const clientId = quotation.client_id || quotation.id;
+                    setSelectedClientId(clientId);
+                    
+                    setData({
+                        quotation_number: quotation.quotation_number || '',
+                        quotation_date: quotation.date || new Date().toISOString().split('T')[0],
+                        valid_till_date: quotation.valid_till_date || '',
+                        client: {
+                            name: quotation.to_company || '',
+                            address: quotation.to_address || '',
+                            attention: quotation.attn || ''
+                        },
+                        items: quotation.items || [{ title: '', description: '', qty: 1, unit: 'Pcs', price: 0, line_total: 0 }],
+                        vat_percentage: quotation.vat || 15,
+                        subtotal: 0,
+                        vat_amount: 0,
+                        grand_total: quotation.total || 0,
+                        terms_conditions: quotation.terms || '',
+                        contact_details: {
+                            name: quotation.contact_name || '',
+                            designation: '',
+                            phone: '',
+                            email: ''
+                        },
+                        header_image: '',
+                        footer_image: '',
+                        disclaimer: ''
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading quotation:', err);
+            }
+        };
 
         loadClients();
         loadSettings();
         loadTerms();
         loadServices();
         loadQuotations();
-    }, []);
+        
+        // Load existing quotation if ID is provided
+        if (quotationId) {
+            loadQuotationById(quotationId);
+        }
+    }, [quotationId]);
 
     // Set initial service type when services load
     useEffect(() => {
@@ -256,9 +302,16 @@ const QuotationGenerator = () => {
                 quotation_number: data.quotation_number
             };
 
-            await api.quotations.create(payload);
-            setSaving(false);
-            alert('Quotation saved successfully!');
+            if (quotationId) {
+                // Update existing quotation
+                await api.quotations.update(quotationId, payload);
+                alert('Quotation updated successfully!');
+            } else {
+                // Create new quotation
+                await api.quotations.create(payload);
+                alert('Quotation saved successfully!');
+            }
+            navigate('/quotations');
         } catch (err) {
             console.error(err);
             alert('Failed to save quotation.');

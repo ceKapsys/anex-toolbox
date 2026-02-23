@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.6.1] - 2026-02-23
+
+### Fixed
+- **Quotation Edit Functionality**: Fixed edit button not loading existing quotations
+  - Added support for loading quotations by ID from query parameters
+  - Implemented update logic in QuotationGenerator for editing existing quotations
+  - Store now properly redirects to quotations list after saving
+
 ## [3.6.0] - 2026-02-12
 
 ### Major Changes
