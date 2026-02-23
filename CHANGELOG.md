@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.9.7] - 2026-02-23
+
+### Fixed
+- **Database Migration**: Synced production PostgreSQL database with Prisma schema
+  - Added missing `quotation_number` and `valid_till_date` columns to quotations table
+  - Resolved 500 error on `/api/quotations` caused by Prisma referencing non-existent columns
+  - Used direct connection (port 5432) to bypass pgbouncer for DDL operations
+
 ## [3.9.6] - 2026-02-23
 
 ### Fixed
