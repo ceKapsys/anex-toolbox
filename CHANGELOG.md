@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.9.9] - 2026-02-23
+
+### Changed
+- **Invoice PDF Spacing**: Adjusted margins in invoice-print.css for better layout
+  - `.header-grid` margin top and bottom increased to 25px
+  - `.section` margin-bottom increased to 15px
+  - `.anex-row` margin-bottom increased to 15px
+
 ## [3.9.8] - 2026-02-23
 
 ### Fixed
