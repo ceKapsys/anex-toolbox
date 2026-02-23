@@ -2,6 +2,16 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.9.5] - 2026-02-23
+
+### Fixed
+- **Quotation Title Styling**: Added 15px margin-top and margin-bottom to "QUOTATION" title
+  - Improved visual spacing in PDF output
+- **Quotation Validity Date**: Fixed missing validity date in downloaded PDF
+  - Auto-calculates 30-day validity from quotation date if not present
+- **Quotation Number Auto-generation**: Improves fallback generation for missing quotation numbers
+  - Ensures quotation number is always present in PDF
+
 ## [3.6.1] - 2026-02-23
 
 ### Fixed

@@ -179,11 +179,23 @@ const QuotationsList = () => {
 
         setDownloadingId(quotation.id);
 
+        // Calculate validity date if not present
+        let validityDate = quotation.valid_till_date;
+        if (!validityDate && quotation.date) {
+            const date = new Date(quotation.date);
+            const validDate = new Date(date);
+            validDate.setDate(date.getDate() + 30);
+            validityDate = validDate.toISOString().split('T')[0];
+        }
+
+        // Generate quotation number if not present
+        const quotationNumber = quotation.quotation_number || `QT-${quotation.id}`;
+
         // Prepare the data structure for the QuotationTemplate
         const data = {
-            quotation_number: quotation.quotation_number || `QT-${quotation.id}`,
+            quotation_number: quotationNumber,
             quotation_date: quotation.date,
-            valid_till_date: quotation.valid_till_date || '',
+            valid_till_date: validityDate || '',
             client: {
                 name: quotation.to_company || '',
                 address: quotation.to_address || '',
