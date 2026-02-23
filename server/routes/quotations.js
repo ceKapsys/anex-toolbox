@@ -36,12 +36,14 @@ router.post('/', isAuthenticated, async (req, res) => {
         const items = JSON.stringify(d.items || []);
 
         const data = {
+            quotation_number: d.quotation_number || null,
             client_id: d.client_id ? parseInt(d.client_id, 10) : null,
             to_company: d.to_company || null,
             to_address: d.to_address || null,
             attn: d.attn || null,
             type: d.type || null,
             date: d.date || null,
+            valid_till_date: d.valid_till_date || null,
             vat: d.vat !== undefined && d.vat !== '' ? parseFloat(d.vat) : null,
             discount: d.discount !== undefined && d.discount !== '' ? parseFloat(d.discount) : null,
             items,
@@ -49,7 +51,7 @@ router.post('/', isAuthenticated, async (req, res) => {
             contact_name: d.contact_name || null,
             total: d.total !== undefined && d.total !== '' ? parseFloat(d.total) : null,
             status: d.status || 'Draft',
-            work_order_number: d.quotation_number || null
+            work_order_number: d.work_order_number || null
         };
 
         const newQuotation = await quotationRepository.create(data);
@@ -65,12 +67,14 @@ router.put('/:id', isAuthenticated, async (req, res) => {
         const d = req.body;
 
         const data = {};
+        if (d.quotation_number !== undefined) data.quotation_number = d.quotation_number;
         if (d.client_id !== undefined) data.client_id = d.client_id;
         if (d.to_company !== undefined) data.to_company = d.to_company;
         if (d.to_address !== undefined) data.to_address = d.to_address;
         if (d.attn !== undefined) data.attn = d.attn;
         if (d.type !== undefined) data.type = d.type;
         if (d.date !== undefined) data.date = d.date;
+        if (d.valid_till_date !== undefined) data.valid_till_date = d.valid_till_date;
         if (d.vat !== undefined) data.vat = d.vat;
         if (d.discount !== undefined) data.discount = d.discount;
         if (d.items) data.items = JSON.stringify(d.items);
@@ -79,7 +83,6 @@ router.put('/:id', isAuthenticated, async (req, res) => {
         if (d.total !== undefined) data.total = d.total;
         if (d.status !== undefined) data.status = d.status;
         if (d.work_order_number !== undefined) data.work_order_number = d.work_order_number;
-        if (d.quotation_number !== undefined) data.work_order_number = d.quotation_number;
 
         if (Object.keys(data).length === 0) return res.json({ message: 'No changes provided' });
 

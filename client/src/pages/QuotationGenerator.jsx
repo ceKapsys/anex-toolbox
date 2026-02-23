@@ -286,20 +286,21 @@ const QuotationGenerator = () => {
         try {
             // Map to backend schema
             const payload = {
+                quotation_number: data.quotation_number,
                 client_id: selectedClientId ? Number(selectedClientId) : 0,
                 to_company: data.client.name,
                 to_address: data.client.address,
                 attn: data.client.attention,
                 type: 'GEN',
                 date: data.quotation_date,
+                valid_till_date: data.valid_till_date,
                 vat: data.vat_percentage,
                 discount: 0,
                 items: data.items,
                 terms: data.terms_conditions,
                 contact_name: data.contact_details.name,
                 total: data.grand_total,
-                status: 'Draft',
-                quotation_number: data.quotation_number
+                status: 'Draft'
             };
 
             if (quotationId) {

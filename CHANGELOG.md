@@ -2,6 +2,17 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.9.6] - 2026-02-23
+
+### Fixed
+- **Quotation Update Error (500)**: Fixed database schema missing fields
+  - Added `quotation_number` field to Quotation table
+  - Added `valid_till_date` field to Quotation table
+  - Fixed field mapping in quotations route (quotation_number was incorrectly mapped to work_order_number)
+- **Quotation Save with Fields**: Updated handleSave to include all required fields
+  - Ensures quotation_number and valid_till_date are persisted correctly
+  - Fixes 500 error on quotation update endpoint
+
 ## [3.9.5] - 2026-02-23
 
 ### Fixed

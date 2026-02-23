@@ -57,12 +57,14 @@ model Invoice {
 
 model Quotation {
   id                Int      @id @default(autoincrement())
+  quotation_number  String?
   client_id         Int?
   to_company        String?
   to_address        String?
   attn              String?
   type              String?
   date              String?
+  valid_till_date   String?
   vat               Float?
   discount          Float?
   items             String?
