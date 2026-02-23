@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check, X, MoreHorizontal } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check, X, MoreHorizontal, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
+import QuotationTemplate from '../components/templates/QuotationTemplate';
+import { generatePDF } from '../utils/pdfGenerator';
 
 const QuotationsList = () => {
     const [quotations, setQuotations] = useState([]);
@@ -18,6 +20,9 @@ const QuotationsList = () => {
     const [selectedQuotationId, setSelectedQuotationId] = useState(null);
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
     const [settings, setSettings] = useState(null);
+    const [downloadingId, setDownloadingId] = useState(null);
+    const [pdfData, setPdfData] = useState(null);
+    const pdfRef = useRef();
     const navigate = useNavigate();
 
     const loadQuotations = async () => {
@@ -168,6 +173,60 @@ const QuotationsList = () => {
     const openMailModal = (quotation) => {
         setMailModal({ isOpen: true, quotation });
     };
+
+    const handleDownload = (quotation) => {
+        if (!quotation) return;
+
+        setDownloadingId(quotation.id);
+
+        // Prepare the data structure for the QuotationTemplate
+        const data = {
+            quotation_number: quotation.quotation_number || `QT-${quotation.id}`,
+            quotation_date: quotation.date,
+            valid_till_date: quotation.valid_till_date || '',
+            client: {
+                name: quotation.to_company || '',
+                address: quotation.to_address || '',
+                attention: quotation.attn || ''
+            },
+            header_image: settings?.quotation_header || '',
+            footer_image: settings?.quotation_footer || '',
+            items: quotation.items || [],
+            vat_percentage: quotation.vat || 15,
+            subtotal: (quotation.items || []).reduce((sum, item) => sum + ((item.qty || 1) * (item.price || 0)), 0),
+            vat_amount: 0,
+            grand_total: quotation.total || 0,
+            terms_conditions: quotation.terms || '',
+            contact_details: {
+                name: quotation.contact_name || '',
+                designation: '',
+                phone: '',
+                email: ''
+            },
+            disclaimer: settings?.quotation_disclaimer || ''
+        };
+
+        // Calculate VAT amount
+        data.vat_amount = data.subtotal * (data.vat_percentage / 100);
+
+        setPdfData(data);
+    };
+
+    // Effect to handle PDF generation when pdfData is set
+    useEffect(() => {
+        if (pdfData && pdfRef.current) {
+            setTimeout(() => {
+                generatePDF(pdfRef.current, `${pdfData.quotation_number}.pdf`).then(() => {
+                    setPdfData(null);
+                    setDownloadingId(null);
+                }).catch((err) => {
+                    console.error('PDF generation failed:', err);
+                    setPdfData(null);
+                    setDownloadingId(null);
+                });
+            }, 300);
+        }
+    }, [pdfData]);
 
     const formatCurrency = (amount) => {
         return `${(Number(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BDT`;
@@ -321,10 +380,19 @@ const QuotationsList = () => {
                                 <Edit2 className="h-3.5 w-3.5" /> Edit
                             </Link>
                             <button
-                                onClick={() => navigate(`/quotations/new?id=${qt.id}&download=true`)}
-                                className="flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition font-medium"
+                                onClick={() => handleDownload(qt)}
+                                disabled={downloadingId === qt.id}
+                                className="flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition font-medium disabled:opacity-60"
                             >
-                                <Download className="h-3.5 w-3.5" /> Download
+                                {downloadingId === qt.id ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="h-3.5 w-3.5" /> Download
+                                    </>
+                                )}
                             </button>
                             <button
                                 onClick={() => openMailModal(qt)}
@@ -397,6 +465,11 @@ const QuotationsList = () => {
                 defaultSubject={settings?.quotation_mail_subject || ''}
                 defaultBody={settings?.quotation_mail_template || ''}
             />
+
+            {/* Hidden template for PDF generation */}
+            <div style={{ position: 'fixed', top: 0, left: '-10000px', visibility: 'hidden', pointerEvents: 'none' }}>
+                {pdfData && <QuotationTemplate ref={pdfRef} data={pdfData} />}
+            </div>
         </div>
     );
 };
