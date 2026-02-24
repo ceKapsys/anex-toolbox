@@ -64,6 +64,16 @@ const toDataUrl = async (url) => {
     }
 };
 
+// Get scaled height of an image loaded as a data URL
+const getScaledImageHeight = (dataUrl, scaledWidth) =>
+    new Promise((resolve) => {
+        if (!dataUrl) { resolve(0); return; }
+        const img = new Image();
+        img.onload = () => resolve(img.naturalHeight * (scaledWidth / img.naturalWidth));
+        img.onerror = () => resolve(0);
+        img.src = dataUrl;
+    });
+
 // Reusable inline pdfmake layout objects
 const boxLayout = {
     hLineColor: () => C.border,
@@ -77,7 +87,7 @@ const boxLayout = {
 };
 
 // ─── Document builder ─────────────────────────────────────────────────────────
-const buildDoc = (data, headerDataUrl, footerDataUrl) => {
+const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     const {
         quotation_number,
         quotation_date,
@@ -197,9 +207,8 @@ const buildDoc = (data, headerDataUrl, footerDataUrl) => {
 
     // ── Items Table ───────────────────────────────────────────────────────────
     // Columns: SL 7%, Item auto, Qty 8%, Unit 10%, Price 13%, Total 13%
-    // CONTENT_W ≈ 531pt → SL=38, Item=261, Qty=43, Unit=53, Price=69, Total=67
-    // Sum = 531 ✓
-    const colW = [38, 261, 43, 53, 69, 67];
+    // Item uses '*' (auto-fill) so the table spans exactly CONTENT_W
+    const colW = [38, '*', 43, 53, 69, 69];
 
     const thCell = (text, align = 'left') => ({
         text,
@@ -395,20 +404,20 @@ const buildDoc = (data, headerDataUrl, footerDataUrl) => {
         });
     }
 
-    // ── Disclaimer ────────────────────────────────────────────────────────────
+    // ── Footer content (disclaimer + footer image) ────────────────────────────
+    // Rendered via pdfmake footer callback so they stick to page bottom
+    const footerStack = [];
     if (disclaimer) {
-        content.push({
+        footerStack.push({
             text: disclaimer,
             fontSize: 7.5,
             color: C.light,
             alignment: 'center',
-            margin: [H_PAD, 4, H_PAD, 4],
+            margin: [H_PAD, 4, H_PAD, 0],
         });
     }
-
-    // ── Footer image (full bleed) ─────────────────────────────────────────────
     if (footerDataUrl) {
-        content.push({
+        footerStack.push({
             image: footerDataUrl,
             width: PAGE_W,
             margin: [0, 0, 0, 0],
@@ -417,9 +426,10 @@ const buildDoc = (data, headerDataUrl, footerDataUrl) => {
 
     return {
         pageSize: 'A4',
-        pageMargins: [0, 0, 0, 0],
+        pageMargins: [0, 0, 0, footerAreaHeight],
         defaultStyle: { font: 'Roboto', fontSize: 10, color: C.text },
         content,
+        footer: footerStack.length > 0 ? () => ({ stack: footerStack }) : undefined,
     };
 };
 
@@ -430,7 +440,13 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
             toDataUrl(data.header_image),
             toDataUrl(data.footer_image),
         ]);
-        const docDef = buildDoc(data, headerDataUrl, footerDataUrl);
+
+        // Calculate footer area height so content doesn't overlap
+        const footerImgHeight = await getScaledImageHeight(footerDataUrl, PAGE_W);
+        const disclaimerHeight = data.disclaimer ? 20 : 0;
+        const footerAreaHeight = footerImgHeight + disclaimerHeight;
+
+        const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
         pdfMake.createPdf(docDef).download(filename);
     } catch (err) {
         console.error('pdfmake quotation generation failed:', err);

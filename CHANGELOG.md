@@ -2,6 +2,12 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.2] - 2026-02-24
+
+### Fixed
+- **Quotation PDF layout**: Footer image and disclaimer now stick to the bottom of the page with no bottom margin (using pdfmake footer callback)
+- **Quotation PDF alignment**: Items table, info box, and terms/contact boxes now render at exactly the same width (Item column uses auto-fill) and are centered consistently
+
 ## [3.11.1] - 2026-02-24
 
 ### Fixed
