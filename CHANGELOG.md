@@ -2,6 +2,15 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.0] - 2026-02-24
+
+### Added
+- **`quotationPdfMake.js`**: New pdfmake-based quotation PDF generator replicating the full QuotationTemplate design — header image, QUOTATION title, two-column info box (client + reference), items table with dark-teal header and alternating rows, right-aligned financial summary with coloured rows (subtotal/VAT/total), footer grid (Terms & Conditions + Contact Details boxes), disclaimer, and footer image
+
+### Changed
+- **QuotationsList.jsx**: Migrated PDF download from html2pdf + hidden DOM template to `downloadQuotationPDF` (pdfmake). Removed `pdfRef`, `pdfData` state, and the 300ms `useEffect` delay hack
+- **QuotationGenerator.jsx**: Migrated `downloadPDF` from html2pdf + hidden off-screen template to `downloadQuotationPDF` (pdfmake). Removed `pdfRef` and the hidden `QuotationTemplate` div; live preview panel still uses `QuotationTemplate` (React/HTML) unchanged
+
 ## [3.10.0] - 2026-02-24
 
 ### Fixed

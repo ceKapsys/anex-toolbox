@@ -2,13 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Download, Eye, Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import QuotationTemplate from '../components/templates/QuotationTemplate';
-import { generatePDF } from '../utils/pdfGenerator';
+import { downloadQuotationPDF } from '../utils/quotationPdfMake';
 import clsx from 'clsx';
 import api from '../lib/api';
 
 const QuotationGenerator = () => {
     const templateRef = useRef();
-    const pdfRef = useRef();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const quotationId = searchParams.get('id');
@@ -273,7 +272,7 @@ const QuotationGenerator = () => {
     const downloadPDF = async () => {
         setGenerating(true);
         try {
-            await generatePDF(pdfRef.current, `${data.quotation_number}.pdf`);
+            await downloadQuotationPDF(data, `${data.quotation_number}.pdf`);
         } catch (err) {
             console.error('PDF generation failed:', err);
         } finally {
@@ -570,10 +569,6 @@ const QuotationGenerator = () => {
                     </div>
                 </div>
             </div >
-
-            <div style={{ position: 'fixed', top: 0, left: '-10000px', visibility: 'hidden', pointerEvents: 'none' }}>
-                <QuotationTemplate ref={pdfRef} data={data} />
-            </div>
         </div>
     );
 };

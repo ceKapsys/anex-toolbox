@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check, X, MoreHorizontal, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
-import QuotationTemplate from '../components/templates/QuotationTemplate';
-import { generatePDF } from '../utils/pdfGenerator';
+import { downloadQuotationPDF } from '../utils/quotationPdfMake';
 
 const QuotationsList = () => {
     const [quotations, setQuotations] = useState([]);
@@ -21,8 +20,6 @@ const QuotationsList = () => {
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
     const [settings, setSettings] = useState(null);
     const [downloadingId, setDownloadingId] = useState(null);
-    const [pdfData, setPdfData] = useState(null);
-    const pdfRef = useRef();
     const navigate = useNavigate();
 
     const loadQuotations = async () => {
@@ -174,71 +171,60 @@ const QuotationsList = () => {
         setMailModal({ isOpen: true, quotation });
     };
 
-    const handleDownload = (quotation) => {
+    const handleDownload = async (quotation) => {
         if (!quotation) return;
 
         setDownloadingId(quotation.id);
 
-        // Calculate validity date if not present
-        let validityDate = quotation.valid_till_date;
-        if (!validityDate && quotation.date) {
-            const date = new Date(quotation.date);
-            const validDate = new Date(date);
-            validDate.setDate(date.getDate() + 30);
-            validityDate = validDate.toISOString().split('T')[0];
+        try {
+            let validityDate = quotation.valid_till_date;
+            if (!validityDate && quotation.date) {
+                const date = new Date(quotation.date);
+                const validDate = new Date(date);
+                validDate.setDate(date.getDate() + 30);
+                validityDate = validDate.toISOString().split('T')[0];
+            }
+
+            const quotationNumber = quotation.quotation_number || `QT-${quotation.id}`;
+            const subtotal = (quotation.items || []).reduce(
+                (sum, item) => sum + ((item.qty || 1) * (item.price || 0)), 0
+            );
+            const vatPct = quotation.vat || 15;
+
+            const data = {
+                quotation_number: quotationNumber,
+                quotation_date: quotation.date,
+                valid_till_date: validityDate || '',
+                client: {
+                    name: quotation.to_company || '',
+                    address: quotation.to_address || '',
+                    attention: quotation.attn || '',
+                },
+                header_image: settings?.quotation_header || '',
+                footer_image: settings?.quotation_footer || '',
+                items: quotation.items || [],
+                vat_percentage: vatPct,
+                subtotal,
+                vat_amount: subtotal * (vatPct / 100),
+                grand_total: quotation.total || 0,
+                terms_conditions: quotation.terms || '',
+                contact_details: {
+                    name: quotation.contact_name || '',
+                    designation: '',
+                    phone: '',
+                    email: '',
+                },
+                disclaimer: settings?.quotation_disclaimer || '',
+            };
+
+            await downloadQuotationPDF(data, `${quotationNumber}.pdf`);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setDownloadingId(null);
         }
-
-        // Generate quotation number if not present
-        const quotationNumber = quotation.quotation_number || `QT-${quotation.id}`;
-
-        // Prepare the data structure for the QuotationTemplate
-        const data = {
-            quotation_number: quotationNumber,
-            quotation_date: quotation.date,
-            valid_till_date: validityDate || '',
-            client: {
-                name: quotation.to_company || '',
-                address: quotation.to_address || '',
-                attention: quotation.attn || ''
-            },
-            header_image: settings?.quotation_header || '',
-            footer_image: settings?.quotation_footer || '',
-            items: quotation.items || [],
-            vat_percentage: quotation.vat || 15,
-            subtotal: (quotation.items || []).reduce((sum, item) => sum + ((item.qty || 1) * (item.price || 0)), 0),
-            vat_amount: 0,
-            grand_total: quotation.total || 0,
-            terms_conditions: quotation.terms || '',
-            contact_details: {
-                name: quotation.contact_name || '',
-                designation: '',
-                phone: '',
-                email: ''
-            },
-            disclaimer: settings?.quotation_disclaimer || ''
-        };
-
-        // Calculate VAT amount
-        data.vat_amount = data.subtotal * (data.vat_percentage / 100);
-
-        setPdfData(data);
     };
-
-    // Effect to handle PDF generation when pdfData is set
-    useEffect(() => {
-        if (pdfData && pdfRef.current) {
-            setTimeout(() => {
-                generatePDF(pdfRef.current, `${pdfData.quotation_number}.pdf`).then(() => {
-                    setPdfData(null);
-                    setDownloadingId(null);
-                }).catch((err) => {
-                    console.error('PDF generation failed:', err);
-                    setPdfData(null);
-                    setDownloadingId(null);
-                });
-            }, 300);
-        }
-    }, [pdfData]);
 
     const formatCurrency = (amount) => {
         return `${(Number(amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BDT`;
@@ -477,11 +463,6 @@ const QuotationsList = () => {
                 defaultSubject={settings?.quotation_mail_subject || ''}
                 defaultBody={settings?.quotation_mail_template || ''}
             />
-
-            {/* Hidden template for PDF generation */}
-            <div style={{ position: 'fixed', top: 0, left: '-10000px', visibility: 'hidden', pointerEvents: 'none' }}>
-                {pdfData && <QuotationTemplate ref={pdfRef} data={pdfData} />}
-            </div>
         </div>
     );
 };
