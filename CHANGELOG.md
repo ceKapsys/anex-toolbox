@@ -2,6 +2,11 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.1] - 2026-02-24
+
+### Fixed
+- **Quotation pages broken**: Removed unused `noBorderLayout` constant from `quotationPdfMake.js` that triggered ESLint `no-unused-vars: error` build failure, causing all quotation pages to fail to load
+
 ## [3.11.0] - 2026-02-24
 
 ### Added

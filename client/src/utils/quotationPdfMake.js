@@ -76,15 +76,6 @@ const boxLayout = {
     paddingBottom: () => 0,
 };
 
-const noBorderLayout = {
-    hLineWidth: () => 0,
-    vLineWidth: () => 0,
-    paddingLeft: () => 0,
-    paddingRight: () => 0,
-    paddingTop: () => 0,
-    paddingBottom: () => 0,
-};
-
 // ─── Document builder ─────────────────────────────────────────────────────────
 const buildDoc = (data, headerDataUrl, footerDataUrl) => {
     const {
