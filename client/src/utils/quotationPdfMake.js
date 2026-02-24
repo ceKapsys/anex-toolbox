@@ -287,18 +287,18 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     const VAL_W = 120;
     const LABEL_W = SUMMARY_W - VAL_W;
 
-    const sumRow = (label, value, valueBg, boldRow = false, fontSize = 10) => [
+    const sumRow = (label, value, valueBg) => [
         {
             text: label,
-            fontSize: boldRow ? 11 : fontSize,
-            bold: boldRow,
-            color: boldRow ? C.dark : C.med,
+            fontSize: 10,
+            bold: true,
+            color: C.med,
             alignment: 'right',
             margin: [0, 0, 16, 0],
         },
         {
             text: value,
-            fontSize: boldRow ? 11.5 : fontSize,
+            fontSize: 10,
             bold: true,
             color: C.white,
             fillColor: valueBg,
@@ -313,7 +313,7 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
             body: [
                 sumRow('Subtotal', fmt(subtotal), C.subtotalBg),
                 sumRow(`VAT (${vat_percentage}%)`, fmt(vat_amount), C.tealMed),
-                sumRow('Total', `${fmt(grand_total)} BDT`, C.tealDark, true),
+                sumRow('Total', `${fmt(grand_total)} BDT`, C.tealDark),
             ],
         },
         layout: {
@@ -395,12 +395,12 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
 
         content.push({
             columns: [termsBoxDef, { width: 16, text: '' }, contactBoxDef],
-            margin: [H_PAD, 0, H_PAD, 8],
+            margin: [H_PAD, 0, H_PAD, 0],
         });
     } else {
         content.push({
             columns: [termsBoxDef],
-            margin: [H_PAD, 0, H_PAD, 8],
+            margin: [H_PAD, 0, H_PAD, 0],
         });
     }
 

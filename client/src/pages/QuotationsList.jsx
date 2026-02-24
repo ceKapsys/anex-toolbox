@@ -208,12 +208,16 @@ const QuotationsList = () => {
                 vat_amount: subtotal * (vatPct / 100),
                 grand_total: quotation.total || 0,
                 terms_conditions: quotation.terms || '',
-                contact_details: {
-                    name: quotation.contact_name || '',
-                    designation: '',
-                    phone: '',
-                    email: '',
-                },
+                contact_details: (() => {
+                    const sigs = Array.isArray(settings?.signatories) ? settings.signatories : [];
+                    const matched = sigs.find(s => s.name === quotation.contact_name);
+                    return matched || {
+                        name: quotation.contact_name || '',
+                        designation: '',
+                        phone: '',
+                        email: '',
+                    };
+                })(),
                 disclaimer: settings?.quotation_disclaimer || '',
             };
 

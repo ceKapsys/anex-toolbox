@@ -2,6 +2,13 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.3] - 2026-02-24
+
+### Fixed
+- **Quotation PDF summary alignment**: Subtotal, VAT, and Total rows now use the same font size and styling
+- **Contact details missing in PDF**: Download from quotation list now looks up the matching signatory from settings to show full contact details (designation, phone, email)
+- **Footer bottom spacing**: Removed bottom margin from terms/contact grid so there is no gap before the footer
+
 ## [3.11.2] - 2026-02-24
 
 ### Fixed

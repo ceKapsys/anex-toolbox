@@ -85,7 +85,9 @@ const QuotationGenerator = () => {
                     footer_image: s.quotation_footer || prev.footer_image,
                     // terms_conditions: s.terms_quote || prev.terms_conditions, // Don't overwrite if manual? actually requirements say terms come from quotation terms so start empty or default
                     disclaimer: s.quotation_disclaimer || prev.disclaimer,
-                    contact_details: sigs.length > 0 ? sigs[0] : prev.contact_details
+                    contact_details: sigs.length > 0
+                        ? (sigs.find(s => s.name === prev.contact_details.name) || sigs[0])
+                        : prev.contact_details
                 }));
             } catch (err) {
                 console.error(err);
