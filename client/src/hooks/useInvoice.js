@@ -109,7 +109,7 @@ export const useInvoice = () => {
         selected_bank_id: null,
         terms_id: null,
         terms_text: '',
-        disclaimer: 'This is a system generated invoice.',
+        disclaimer: '',
         cogs: 0,
         amount_paid: 0,
         vds: 0,
@@ -155,7 +155,7 @@ export const useInvoice = () => {
                         ? { ...prev.bank_details, ...bankDetailsArray[0], logo: s.bank_logo || bankDetailsArray[0]?.logo }
                         : prev.bank_details,
                     selected_bank_id: 0,
-                    disclaimer: s.invoice_disclaimer || prev.disclaimer
+                    disclaimer: s.invoice_disclaimer || ''
                 }));
             } catch (err) {
                 console.error("Error loading resources:", err);

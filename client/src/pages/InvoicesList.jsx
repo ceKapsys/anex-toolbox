@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import InvoiceTemplate from '../components/templates/InvoiceTemplate';
 import SendMailModal from '../components/email/SendMailModal';
-import { generatePDF } from '../utils/pdfGenerator';
+import { downloadInvoicePDF } from '../utils/invoicePdfMake';
 import { numberToWords } from '../utils/numberToWords';
 
 const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
@@ -129,8 +128,6 @@ const InvoicesList = () => {
     const [paymentModal, setPaymentModal] = useState({ isOpen: false, invoice: null });
     const [mailModal, setMailModal] = useState({ isOpen: false, invoice: null });
     const [settings, setSettings] = useState(null);
-    const [pdfData, setPdfData] = useState(null);
-    const pdfRef = useRef();
     const navigate = useNavigate();
 
     const loadInvoices = async () => {
@@ -230,7 +227,7 @@ const InvoicesList = () => {
 
     const [downloadingId, setDownloadingId] = useState(null);
 
-    const handleDownload = (invoice) => {
+    const handleDownload = async (invoice) => {
         if (!settings) {
             alert('Settings not loaded yet. Please try again.');
             return;
@@ -238,76 +235,66 @@ const InvoicesList = () => {
 
         setDownloadingId(invoice.id);
 
-        const items = invoice.items_data || [];
-        const totals = invoice.totals_data || {};
-        const client = invoice.client_snapshot || {};
-        const bankSnapshot = invoice.bank_snapshot || {};
+        try {
+            const items = invoice.items_data || [];
+            const totals = invoice.totals_data || {};
+            const client = invoice.client_snapshot || {};
+            const bankSnapshot = invoice.bank_snapshot || {};
 
-        let bankDetails = {};
-        if (Object.keys(bankSnapshot).length > 0) {
-            bankDetails = bankSnapshot;
-        } else {
-            const bankDetailsArray = typeof settings.bank_details === 'string'
-                ? JSON.parse(settings.bank_details || '[]')
-                : (Array.isArray(settings.bank_details) ? settings.bank_details : []);
-            if (bankDetailsArray.length > 0) {
-                bankDetails = {
-                    ...bankDetailsArray[0],
-                    logo: settings.bank_logo || bankDetailsArray[0]?.logo
-                };
+            let bankDetails = {};
+            if (Object.keys(bankSnapshot).length > 0) {
+                bankDetails = bankSnapshot;
+            } else {
+                const bankDetailsArray = typeof settings.bank_details === 'string'
+                    ? JSON.parse(settings.bank_details || '[]')
+                    : (Array.isArray(settings.bank_details) ? settings.bank_details : []);
+                if (bankDetailsArray.length > 0) {
+                    bankDetails = {
+                        ...bankDetailsArray[0],
+                        logo: settings.bank_logo || bankDetailsArray[0]?.logo
+                    };
+                }
             }
+
+            const data = {
+                company_details: typeof settings.company_details === 'string'
+                    ? JSON.parse(settings.company_details)
+                    : (settings.company_details || {}),
+                company_logo: settings.company_logo || '',
+                client: {
+                    name: client.name || client.company || '',
+                    bin: client.bin || '',
+                    address: client.address || '',
+                },
+                invoice_no: invoice.invoice_no,
+                issue_date: invoice.issue_date,
+                due_date: invoice.due_date,
+                time_f: '',
+                quote_ref: invoice.quotation_ref,
+                work_order_ref: invoice.work_order_ref,
+                approved_by: invoice.approved_by,
+                items: items,
+                total_qty: totals.total_qty || 0,
+                total_ex_vat: totals.total_ex_vat || 0,
+                total_sd: totals.total_sd || 0,
+                total_vat: totals.total_vat || 0,
+                due_amount: totals.due_amount || 0,
+                adjust_amount: invoice.adjustment_amount || 0,
+                adjust_note: invoice.adjustment_note,
+                amount_in_words: numberToWords(totals.due_amount || 0),
+                terms_text: invoice.terms_text || '',
+                bank_details: bankDetails,
+                disclaimer: settings.invoice_disclaimer || '',
+            };
+
+            await downloadInvoicePDF(data, `${invoice.invoice_no || 'invoice'}.pdf`);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setDownloadingId(null);
         }
-
-        const data = {
-            company_details: typeof settings.company_details === 'string'
-                ? JSON.parse(settings.company_details)
-                : (settings.company_details || {}),
-            company_logo: settings.company_logo || '',
-            client: {
-                name: client.name || client.company || '',
-                bin: client.bin || '',
-                address: client.address || '',
-                attn: client.attn || ''
-            },
-            invoice_no: invoice.invoice_no,
-            issue_date: invoice.issue_date,
-            due_date: invoice.due_date,
-            time_f: '',
-            quote_ref: invoice.quotation_ref,
-            work_order_ref: invoice.work_order_ref,
-            approved_by: invoice.approved_by,
-            items: items,
-            total_qty: totals.total_qty || 0,
-            total_ex_vat: totals.total_ex_vat || 0,
-            total_sd: totals.total_sd || 0,
-            total_vat: totals.total_vat || 0,
-            due_amount: totals.due_amount || 0,
-            adjust_amount: invoice.adjustment_amount || 0,
-            adjust_note: invoice.adjustment_note,
-            amount_in_words: numberToWords(totals.due_amount || 0),
-            terms: invoice.terms_text,
-            terms_text: invoice.terms_text,
-            bank_details: bankDetails,
-            disclaimer: settings.disclaimer || 'This is a system generated invoice.'
-        };
-
-        setPdfData(data);
     };
-
-    useEffect(() => {
-        if (pdfData && pdfRef.current) {
-            setTimeout(() => {
-                generatePDF(pdfRef.current, `${pdfData.invoice_no}.pdf`).then(() => {
-                    setPdfData(null);
-                    setDownloadingId(null);
-                }).catch((err) => {
-                    console.error('PDF generation failed:', err);
-                    setPdfData(null);
-                    setDownloadingId(null);
-                });
-            }, 500);
-        }
-    }, [pdfData]);
 
     // Calculate metrics - Current Month Only
     const currentDate = new Date();
@@ -556,11 +543,6 @@ const InvoicesList = () => {
                 defaultSubject={settings?.invoice_mail_subject || ''}
                 defaultBody={settings?.invoice_mail_template || ''}
             />
-
-            {/* Hidden PDF Template */}
-            <div style={{ position: 'fixed', top: 0, left: '-10000px', visibility: 'hidden', pointerEvents: 'none' }}>
-                {pdfData && <InvoiceTemplate ref={pdfRef} data={pdfData} />}
-            </div>
         </div>
     );
 };

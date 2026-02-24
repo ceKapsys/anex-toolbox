@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.10.0] - 2026-02-24
+
+### Fixed
+- **Invoice PDF Alignment**: Migrated InvoicesList download from html2pdf to pdfmake for consistent, correctly-aligned PDF output matching the InvoiceGenerator preview
+- **Invoice PDF Terms & Conditions**: Terms and conditions now render correctly in downloaded PDFs from the invoices list (previously used separate html2pdf path that could lose formatting)
+- **Invoice PDF Disclaimer**: Fixed wrong settings key (`settings.disclaimer` → `settings.invoice_disclaimer`) that caused "This is a system generated invoice." to always appear instead of the configured disclaimer
+- **Invoice PDF Disclaimer Default**: Removed hardcoded default disclaimer text; when no disclaimer is configured in settings, the PDF now shows the standard ANEX footer instead of the old placeholder text
+
 ## [3.9.9] - 2026-02-23
 
 ### Changed
