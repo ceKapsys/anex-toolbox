@@ -2,6 +2,14 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.5] - 2026-03-01
+
+### Fixed
+- **Email PDF Attachments**: Invoice and quotation PDFs are now attached when sending via the Send Mail button
+  - Added `getInvoicePDFBase64` and `getQuotationPDFBase64` utility functions to generate PDFs as base64 strings
+  - Updated `InvoicesList` and `QuotationsList` send email handlers to generate the PDF and pass `pdf_data` to the email API
+  - Previously emails were sent without any PDF attachment
+
 ## [3.11.4] - 2026-03-01
 
 ### Fixed

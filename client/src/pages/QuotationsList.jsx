@@ -3,7 +3,7 @@ import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
-import { downloadQuotationPDF } from '../utils/quotationPdfMake';
+import { downloadQuotationPDF, getQuotationPDFBase64 } from '../utils/quotationPdfMake';
 
 const QuotationsList = () => {
     const [quotations, setQuotations] = useState([]);
@@ -158,7 +158,56 @@ const QuotationsList = () => {
 
     const handleSendEmail = async (mailData) => {
         try {
-            await api.email.sendQuotation(mailModal.quotation.id, mailData);
+            const quotation = mailModal.quotation;
+
+            let validityDate = quotation.valid_till_date;
+            if (!validityDate && quotation.date) {
+                const date = new Date(quotation.date);
+                const validDate = new Date(date);
+                validDate.setDate(date.getDate() + 30);
+                validityDate = validDate.toISOString().split('T')[0];
+            }
+
+            const quotationNumber = quotation.quotation_number || `QT-${quotation.id}`;
+            const subtotal = (quotation.items || []).reduce(
+                (sum, item) => sum + ((item.qty || 1) * (item.price || 0)), 0
+            );
+            const vatPct = quotation.vat || 15;
+
+            const pdfData = {
+                quotation_number: quotationNumber,
+                quotation_date: quotation.date,
+                valid_till_date: validityDate || '',
+                client: {
+                    name: quotation.to_company || '',
+                    address: quotation.to_address || '',
+                    attention: quotation.attn || '',
+                },
+                header_image: settings?.quotation_header || '',
+                footer_image: settings?.quotation_footer || '',
+                items: quotation.items || [],
+                vat_percentage: vatPct,
+                subtotal,
+                vat_amount: subtotal * (vatPct / 100),
+                grand_total: quotation.total || 0,
+                terms_conditions: quotation.terms || '',
+                contact_details: (() => {
+                    const sigs = Array.isArray(settings?.signatories) ? settings.signatories : [];
+                    const matched = sigs.find(s => s.name === quotation.contact_name);
+                    return matched || {
+                        name: quotation.contact_name || '',
+                        designation: '',
+                        phone: '',
+                        email: '',
+                    };
+                })(),
+                disclaimer: settings?.quotation_disclaimer || '',
+            };
+
+            // Generate PDF as base64 for email attachment
+            const pdf_data = await getQuotationPDFBase64(pdfData);
+
+            await api.email.sendQuotation(mailModal.quotation.id, { ...mailData, pdf_data });
             alert('Quotation sent successfully!');
             setMailModal({ isOpen: false, quotation: null });
             await loadQuotations();

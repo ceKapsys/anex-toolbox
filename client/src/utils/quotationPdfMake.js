@@ -24,21 +24,21 @@ const CONTENT_W = PAGE_W - H_PAD * 2; // ≈ 531pt
 
 // Colours matching quotation-print.css
 const C = {
-    tealDark:   '#1a4f5a',
-    tealMed:    '#5f929e',
+    tealDark: '#1a4f5a',
+    tealMed: '#5f929e',
     subtotalBg: '#bdc5c9',
-    border:     '#b0b8c1',
-    rowAlt:     '#f7f9fa',
-    boxBg:      '#f9fafb',
-    rowSep:     '#eef0f1',
-    labelSep:   '#e0e0e0',
-    dark:       '#111111',
-    text:       '#333333',
-    med:        '#374151',
-    gray:       '#444444',
-    muted:      '#4b5563',
-    light:      '#6b7280',
-    white:      '#ffffff',
+    border: '#b0b8c1',
+    rowAlt: '#f7f9fa',
+    boxBg: '#f9fafb',
+    rowSep: '#eef0f1',
+    labelSep: '#e0e0e0',
+    dark: '#111111',
+    text: '#333333',
+    med: '#374151',
+    gray: '#444444',
+    muted: '#4b5563',
+    light: '#6b7280',
+    white: '#ffffff',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -173,15 +173,15 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
 
     // Right column: info rows
     const infoRows = [
-        ['Number',   quotation_number || ''],
-        ['Date',     quotation_date || ''],
+        ['Number', quotation_number || ''],
+        ['Date', quotation_date || ''],
         ['Validity', valid_till_date || ''],
     ];
     const rightStack = infoRows.map(([label, val]) => ({
         columns: [
             { text: label, width: 65, fontSize: 9.5, bold: true, color: C.tealDark, margin: [0, 0, 0, 5] },
-            { text: ':',   width: 14, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 0, 0, 5] },
-            { text: val,   width: '*', fontSize: 9.5, bold: true, color: C.dark, margin: [0, 0, 0, 5] },
+            { text: ':', width: 14, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 0, 0, 5] },
+            { text: val, width: '*', fontSize: 9.5, bold: true, color: C.dark, margin: [0, 0, 0, 5] },
         ],
     }));
 
@@ -452,4 +452,23 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
         console.error('pdfmake quotation generation failed:', err);
         throw err;
     }
+};
+
+export const getQuotationPDFBase64 = async (data) => {
+    const [headerDataUrl, footerDataUrl] = await Promise.all([
+        toDataUrl(data.header_image),
+        toDataUrl(data.footer_image),
+    ]);
+
+    const footerImgHeight = await getScaledImageHeight(footerDataUrl, PAGE_W);
+    const disclaimerHeight = data.disclaimer ? 20 : 0;
+    const footerAreaHeight = footerImgHeight + disclaimerHeight;
+
+    const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
+    return new Promise((resolve, reject) => {
+        pdfMake.createPdf(docDef).getBase64((b64) => {
+            if (b64) resolve(b64);
+            else reject(new Error('PDF base64 generation failed'));
+        });
+    });
 };

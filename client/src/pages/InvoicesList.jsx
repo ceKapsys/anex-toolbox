@@ -3,7 +3,7 @@ import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, C
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
-import { downloadInvoicePDF } from '../utils/invoicePdfMake';
+import { downloadInvoicePDF, getInvoicePDFBase64 } from '../utils/invoicePdfMake';
 import { numberToWords } from '../utils/numberToWords';
 
 const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
@@ -169,26 +169,62 @@ const InvoicesList = () => {
 
     const handleSendEmail = async (mailData) => {
         try {
-            // Generate PDF first
             const invoice = mailModal.invoice;
-            const companyDetails = settings.company_details || {};
-            const bankDetails = settings.bank_details || [];
+            const items = invoice.items_data || [];
+            const totals = invoice.totals_data || {};
+            const client = invoice.client_snapshot || {};
+            const bankSnapshot = invoice.bank_snapshot || {};
 
-            const data = {
+            let bankDetails = {};
+            if (Object.keys(bankSnapshot).length > 0) {
+                bankDetails = bankSnapshot;
+            } else {
+                const bankDetailsArray = typeof settings.bank_details === 'string'
+                    ? JSON.parse(settings.bank_details || '[]')
+                    : (Array.isArray(settings.bank_details) ? settings.bank_details : []);
+                if (bankDetailsArray.length > 0) {
+                    bankDetails = {
+                        ...bankDetailsArray[0],
+                        logo: settings.bank_logo || bankDetailsArray[0]?.logo
+                    };
+                }
+            }
+
+            const pdfData = {
+                company_details: typeof settings.company_details === 'string'
+                    ? JSON.parse(settings.company_details)
+                    : (settings.company_details || {}),
+                company_logo: settings.company_logo || '',
+                client: {
+                    name: client.name || client.company || '',
+                    bin: client.bin || '',
+                    address: client.address || '',
+                },
                 invoice_no: invoice.invoice_no,
-                invoice_type: invoice.invoice_type || 'Tax Invoice',
                 issue_date: invoice.issue_date,
                 due_date: invoice.due_date,
-                client_snapshot: invoice.client_snapshot,
-                items_data: invoice.items_data ? JSON.parse(invoice.items_data) : [],
-                totals_data: invoice.totals_data ? JSON.parse(invoice.totals_data) : {},
+                time_f: '',
+                quote_ref: invoice.quotation_ref,
+                work_order_ref: invoice.work_order_ref,
+                approved_by: invoice.approved_by,
+                items: items,
+                total_qty: totals.total_qty || 0,
+                total_ex_vat: totals.total_ex_vat || 0,
+                total_sd: totals.total_sd || 0,
+                total_vat: totals.total_vat || 0,
+                due_amount: totals.due_amount || 0,
+                adjust_amount: invoice.adjustment_amount || 0,
+                adjust_note: invoice.adjustment_note,
+                amount_in_words: numberToWords(totals.due_amount || 0),
+                terms_text: invoice.terms_text || '',
                 bank_details: bankDetails,
-                disclaimer: settings.invoice_disclaimer || 'This is a system generated invoice.'
+                disclaimer: settings.invoice_disclaimer || '',
             };
 
-            // Note: PDF generation happens client-side
-            // For email, we'll send without PDF attachment as base64 encoding is handled by the backend
-            await api.email.sendInvoice(mailModal.invoice.id, mailData);
+            // Generate PDF as base64 for email attachment
+            const pdf_data = await getInvoicePDFBase64(pdfData);
+
+            await api.email.sendInvoice(mailModal.invoice.id, { ...mailData, pdf_data });
             alert('Invoice sent successfully!');
             setMailModal({ isOpen: false, invoice: null });
             await loadInvoices();

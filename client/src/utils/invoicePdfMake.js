@@ -398,3 +398,17 @@ export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
         throw err;
     }
 };
+
+export const getInvoicePDFBase64 = async (data) => {
+    const [logoUrl, bankLogoUrl] = await Promise.all([
+        toDataUrl(data.company_logo),
+        toDataUrl(data.bank_details?.logo),
+    ]);
+    const docDef = buildDoc(data, logoUrl, bankLogoUrl);
+    return new Promise((resolve, reject) => {
+        pdfMake.createPdf(docDef).getBase64((b64) => {
+            if (b64) resolve(b64);
+            else reject(new Error('PDF base64 generation failed'));
+        });
+    });
+};
