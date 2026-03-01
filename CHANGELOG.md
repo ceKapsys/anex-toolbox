@@ -2,6 +2,18 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.6] - 2026-03-01
+
+### Fixed
+- **Send Mail Page Freeze**: Emails with PDF attachments no longer freeze the page
+  - Switched from base64-in-JSON to multipart FormData file upload for PDF attachments
+  - PDFs are generated as Blobs (not base64 strings) on the client, avoiding expensive synchronous conversion
+  - Server now uses `multer` to parse multipart uploads, receiving PDFs as binary buffers
+  - Added `requestFormData` helper to API client for multipart requests
+
+### Dependencies
+- Added: `multer` for server-side multipart form data parsing
+
 ## [3.11.5] - 2026-03-01
 
 ### Fixed

@@ -3,7 +3,7 @@ import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, C
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
-import { downloadInvoicePDF, getInvoicePDFBase64 } from '../utils/invoicePdfMake';
+import { downloadInvoicePDF, getInvoicePDFBlob } from '../utils/invoicePdfMake';
 import { numberToWords } from '../utils/numberToWords';
 
 const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
@@ -190,7 +190,7 @@ const InvoicesList = () => {
                 }
             }
 
-            const pdfData = {
+            const pdfBuildData = {
                 company_details: typeof settings.company_details === 'string'
                     ? JSON.parse(settings.company_details)
                     : (settings.company_details || {}),
@@ -221,10 +221,19 @@ const InvoicesList = () => {
                 disclaimer: settings.invoice_disclaimer || '',
             };
 
-            // Generate PDF as base64 for email attachment
-            const pdf_data = await getInvoicePDFBase64(pdfData);
+            // Generate PDF as Blob for email attachment
+            const pdfBlob = await getInvoicePDFBlob(pdfBuildData);
 
-            await api.email.sendInvoice(mailModal.invoice.id, { ...mailData, pdf_data });
+            // Send as multipart form data to avoid JSON base64 bloat
+            const formData = new FormData();
+            formData.append('invoice_id', invoice.id);
+            formData.append('to', mailData.to);
+            if (mailData.cc) formData.append('cc', mailData.cc);
+            formData.append('subject', mailData.subject);
+            formData.append('body', mailData.body);
+            formData.append('pdf', pdfBlob, `${invoice.invoice_no || 'invoice'}.pdf`);
+
+            await api.email.sendInvoice(formData);
             alert('Invoice sent successfully!');
             setMailModal({ isOpen: false, invoice: null });
             await loadInvoices();

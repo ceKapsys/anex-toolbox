@@ -1,6 +1,6 @@
 {
   "name": "anex-toolbox",
-  "version": "3.11.5",
+  "version": "3.11.6",
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
@@ -16,13 +16,14 @@
     "dotenv": "^17.3.1",
     "express": "^4.18.2",
     "express-session": "^1.19.0",
+    "multer": "^2.1.0",
     "nodemailer": "^8.0.1",
     "pg": "^8.11.3"
   },
   "devDependencies": {
-    "prisma": "^7.4.0",
-    "nodemon": "^3.0.3",
+    "@prisma/config": "^7.4.0",
     "@types/node": "^20.11.24",
-    "@prisma/config": "^7.4.0"
+    "nodemon": "^3.0.3",
+    "prisma": "^7.4.0"
   }
 }

@@ -37,6 +37,30 @@ const request = async (endpoint, options = {}) => {
     }
 };
 
+// Multipart/FormData request (for file uploads — no Content-Type header, browser sets boundary)
+const requestFormData = async (endpoint, formData) => {
+    const url = `${API_URL}${endpoint}`;
+    const sessionId = localStorage.getItem('sessionId');
+    const headers = {};
+    if (sessionId) headers['x-session-id'] = sessionId;
+
+    try {
+        const response = await fetch(url, { method: 'POST', headers, body: formData });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                localStorage.removeItem('sessionId');
+                window.location.href = '/login';
+            }
+            throw new Error(errorBody.error || `Request failed: ${response.statusText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`API Error (${endpoint}):`, error);
+        throw error;
+    }
+};
+
 const api = {
     // Generic methods for hooks
     get: (endpoint) => request(endpoint, { method: 'GET' }),
@@ -84,8 +108,8 @@ const api = {
         update: (key, value) => request('/settings', { method: 'POST', body: JSON.stringify({ key, value }) }),
     },
     email: {
-        sendInvoice: (invoiceId, data) => request('/email/send-invoice', { method: 'POST', body: JSON.stringify({ invoice_id: invoiceId, ...data }) }),
-        sendQuotation: (quotationId, data) => request('/email/send-quotation', { method: 'POST', body: JSON.stringify({ quotation_id: quotationId, ...data }) }),
+        sendInvoice: (formData) => requestFormData('/email/send-invoice', formData),
+        sendQuotation: (formData) => requestFormData('/email/send-quotation', formData),
         testSMTP: () => request('/email/test-smtp', { method: 'POST', body: JSON.stringify({}) }),
     }
 };

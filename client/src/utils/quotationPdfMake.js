@@ -454,7 +454,7 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
     }
 };
 
-export const getQuotationPDFBase64 = async (data) => {
+export const getQuotationPDFBlob = async (data) => {
     const [headerDataUrl, footerDataUrl] = await Promise.all([
         toDataUrl(data.header_image),
         toDataUrl(data.footer_image),
@@ -466,9 +466,12 @@ export const getQuotationPDFBase64 = async (data) => {
 
     const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
     return new Promise((resolve, reject) => {
-        pdfMake.createPdf(docDef).getBase64((b64) => {
-            if (b64) resolve(b64);
-            else reject(new Error('PDF base64 generation failed'));
-        });
+        try {
+            pdfMake.createPdf(docDef).getBlob((blob) => {
+                resolve(blob);
+            });
+        } catch (err) {
+            reject(err);
+        }
     });
 };

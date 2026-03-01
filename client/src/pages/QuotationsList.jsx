@@ -3,7 +3,7 @@ import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
-import { downloadQuotationPDF, getQuotationPDFBase64 } from '../utils/quotationPdfMake';
+import { downloadQuotationPDF, getQuotationPDFBlob } from '../utils/quotationPdfMake';
 
 const QuotationsList = () => {
     const [quotations, setQuotations] = useState([]);
@@ -174,7 +174,7 @@ const QuotationsList = () => {
             );
             const vatPct = quotation.vat || 15;
 
-            const pdfData = {
+            const pdfBuildData = {
                 quotation_number: quotationNumber,
                 quotation_date: quotation.date,
                 valid_till_date: validityDate || '',
@@ -204,10 +204,19 @@ const QuotationsList = () => {
                 disclaimer: settings?.quotation_disclaimer || '',
             };
 
-            // Generate PDF as base64 for email attachment
-            const pdf_data = await getQuotationPDFBase64(pdfData);
+            // Generate PDF as Blob for email attachment
+            const pdfBlob = await getQuotationPDFBlob(pdfBuildData);
 
-            await api.email.sendQuotation(mailModal.quotation.id, { ...mailData, pdf_data });
+            // Send as multipart form data
+            const formData = new FormData();
+            formData.append('quotation_id', quotation.id);
+            formData.append('to', mailData.to);
+            if (mailData.cc) formData.append('cc', mailData.cc);
+            formData.append('subject', mailData.subject);
+            formData.append('body', mailData.body);
+            formData.append('pdf', pdfBlob, `${quotationNumber}.pdf`);
+
+            await api.email.sendQuotation(formData);
             alert('Quotation sent successfully!');
             setMailModal({ isOpen: false, quotation: null });
             await loadQuotations();

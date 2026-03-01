@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const multer = require('multer');
 const invoiceRepository = require('../repositories/InvoiceRepository');
 const quotationRepository = require('../repositories/QuotationRepository');
 const settingRepository = require('../repositories/SettingRepository');
 const { isAuthenticated } = require('./auth');
+
+// Multer: keep uploaded PDF in memory (no disk writes)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Read SMTP config from settings DB
 const getSmtpConfig = async () => {
@@ -46,10 +50,10 @@ const createTransporter = async () => {
     };
 };
 
-// Send invoice email
-router.post('/send-invoice', isAuthenticated, async (req, res) => {
+// Send invoice email (multipart: fields + optional pdf file)
+router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, res) => {
     try {
-        const { invoice_id, to, cc, subject, body, pdf_data } = req.body;
+        const { invoice_id, to, cc, subject, body } = req.body;
 
         if (!invoice_id || !to) {
             return res.status(400).json({ error: 'Invoice ID and recipient email are required' });
@@ -62,19 +66,21 @@ router.post('/send-invoice', isAuthenticated, async (req, res) => {
 
         const { transporter, config } = await createTransporter();
 
+        const attachments = [];
+        if (req.file) {
+            attachments.push({
+                filename: req.file.originalname || `${invoice.invoice_no}.pdf`,
+                content: req.file.buffer,
+            });
+        }
+
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: to,
             cc: cc || undefined,
             subject: subject || `Invoice ${invoice.invoice_no}`,
             html: body || `<p>Please find the attached invoice.</p>`,
-            attachments: pdf_data ? [
-                {
-                    filename: `${invoice.invoice_no}.pdf`,
-                    content: pdf_data.replace(/^data:application\/pdf;base64,/, ''),
-                    encoding: 'base64'
-                }
-            ] : []
+            attachments,
         };
 
         await transporter.sendMail(mailOptions);
@@ -87,10 +93,10 @@ router.post('/send-invoice', isAuthenticated, async (req, res) => {
     }
 });
 
-// Send quotation email
-router.post('/send-quotation', isAuthenticated, async (req, res) => {
+// Send quotation email (multipart: fields + optional pdf file)
+router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req, res) => {
     try {
-        const { quotation_id, to, cc, subject, body, pdf_data } = req.body;
+        const { quotation_id, to, cc, subject, body } = req.body;
 
         if (!quotation_id || !to) {
             return res.status(400).json({ error: 'Quotation ID and recipient email are required' });
@@ -103,19 +109,21 @@ router.post('/send-quotation', isAuthenticated, async (req, res) => {
 
         const { transporter, config } = await createTransporter();
 
+        const attachments = [];
+        if (req.file) {
+            attachments.push({
+                filename: req.file.originalname || `Quotation-${quotation.id}.pdf`,
+                content: req.file.buffer,
+            });
+        }
+
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: to,
             cc: cc || undefined,
             subject: subject || `Quotation for ${quotation.to_company}`,
             html: body || `<p>Please find the attached quotation.</p>`,
-            attachments: pdf_data ? [
-                {
-                    filename: `Quotation-${quotation.id}.pdf`,
-                    content: pdf_data.replace(/^data:application\/pdf;base64,/, ''),
-                    encoding: 'base64'
-                }
-            ] : []
+            attachments,
         };
 
         await transporter.sendMail(mailOptions);
