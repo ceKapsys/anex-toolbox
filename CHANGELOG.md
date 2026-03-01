@@ -2,6 +2,13 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.11.4] - 2026-03-01
+
+### Fixed
+- **Invoice PDF Header**: Changed "NATIONAL BOARD OF REVENUE (TAX INVOICE)" to "NATIONAL BOARD OF REVENUE (NBR)" and ensured center alignment of header text and TAX INVOICE label
+- **Invoice PDF Spacing**: Added proper margins between all major sections — page top, header, Registered Business Info, Buyer/Invoice info, Total in Words, and math row (Net/VAT/Adjustment/Due)
+- **Invoice PDF Table Width**: Reduced items table column widths so the table never exceeds the Registered Business Info box width
+
 ## [3.11.3] - 2026-02-24
 
 ### Fixed

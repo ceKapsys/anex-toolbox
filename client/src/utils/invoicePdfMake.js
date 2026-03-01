@@ -155,7 +155,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
 
     const taxInvoiceBox = {
         table: { widths: ['auto'], body: [[{ text: 'TAX INVOICE', fontSize: 9, bold: true, margin: [12, 2, 12, 2], border: [true, true, true, true], color: '#111' }]] },
-        layout: 'tagBox', alignment: 'center',
+        layout: 'tagBox',
     };
     const mushakBox = {
         table: { widths: ['auto'], body: [[{ text: 'MUSHAK 6.3', fontSize: 9, bold: true, margin: [8, 2, 8, 2], border: [true, true, true, true], color: '#111' }]] },
@@ -169,13 +169,13 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
                 width: '*',
                 stack: [
                     { text: "GOVERNMENT OF THE PEOPLE'S REPUBLIC OF BANGLADESH", fontSize: 8.5, bold: true, alignment: 'center' },
-                    { text: 'NATIONAL BOARD OF REVENUE (TAX INVOICE)', fontSize: 8.5, bold: true, alignment: 'center', margin: [0, 1, 0, 3] },
-                    taxInvoiceBox,
+                    { text: 'NATIONAL BOARD OF REVENUE (NBR)', fontSize: 8.5, bold: true, alignment: 'center', margin: [0, 1, 0, 3] },
+                    { ...taxInvoiceBox, alignment: 'center' },
                 ],
             },
             { width: 85, stack: [{ text: '', fontSize: 1 }, mushakBox] },
         ],
-        margin: [0, 0, 0, 6],
+        margin: [0, 0, 0, 10],
     };
 
     // ── Business info ─────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
         { text: [{ text: 'Business Name:  ', bold: true }, company_details?.name || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
         { text: [{ text: 'BIN Number:  ', bold: true }, company_details?.bin || ''], alignment: 'center', fontSize: 9, margin: [0, 0, 0, 1] },
         { text: [{ text: 'Address:  ', bold: true }, company_details?.address || ''], alignment: 'center', fontSize: 9 },
-    ]);
+    ], [0, 0, 0, 10]);
 
     // ── Two-column Buyer / Invoice ─────────────────────────────────────────────
     const invoiceRows = [
@@ -202,7 +202,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
             { width: 6, text: '' },
             sectionBox('INVOICE INFORMATION', [infoTable(invoiceRows)], [0, 0, 0, 0]),
         ],
-        margin: [0, 0, 0, 5],
+        margin: [0, 0, 0, 10],
     };
 
     // ── Items table — 11 columns, ALL fit within A4 content width (543pt) ────
@@ -210,7 +210,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
     //  With 0.5pt borders × 12 lines ≈ 6pt overhead → target column sum ≤ 537pt
     //
     //  SL | Description | Unit | Qty | PUP | TP | SDR | SDA | VATR | VATA | TP
-    const colW = [20, 108, 52, 20, 52, 50, 36, 44, 34, 44, 57];
+    const colW = [18, 100, 48, 20, 50, 48, 34, 42, 32, 42, 55];
     //            20 + 108 + 52 + 20 + 52 + 50 + 36 + 44 + 34 + 44 + 57 = 517
     // (pdfmake padding: 2+2 per cell × 11 = 44pt extra → 517 + ~20 overhead = stays within 543)
 
@@ -279,7 +279,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
     // ── Totals ────────────────────────────────────────────────────────────────
     const wordsLine = {
         text: `Total in Words: ${amount_in_words || ''} Taka Only`,
-        fontSize: 9, bold: true, italics: true, margin: [0, 0, 0, 5],
+        fontSize: 9, bold: true, italics: true, margin: [0, 4, 0, 6],
     };
 
     const mathRow = {
@@ -295,7 +295,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
             mathBox('Due Amount', fmt(due_amount)),
             { width: '*', text: '' },
         ],
-        margin: [0, 0, 0, 6],
+        margin: [0, 4, 0, 10],
     };
 
     // ── Pay bar ───────────────────────────────────────────────────────────────
@@ -377,7 +377,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
 
     return {
         pageSize: 'A4',
-        pageMargins: [26, 20, 26, 15],
+        pageMargins: [26, 30, 26, 15],
         defaultStyle: { font: 'Roboto', fontSize: 9, color: '#111111' },
         content: [header, bizInfo, twoCol, itemsTable, wordsLine, ...adjNote, mathRow, payBar, termsBox, paymentSection, footerNote],
     };
