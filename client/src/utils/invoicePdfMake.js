@@ -170,7 +170,7 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
                 stack: [
                     { text: "GOVERNMENT OF THE PEOPLE'S REPUBLIC OF BANGLADESH", fontSize: 8.5, bold: true, alignment: 'center' },
                     { text: 'NATIONAL BOARD OF REVENUE (NBR)', fontSize: 8.5, bold: true, alignment: 'center', margin: [0, 1, 0, 3] },
-                    { ...taxInvoiceBox, alignment: 'center' },
+                    { columns: [{ width: '*', text: '' }, taxInvoiceBox, { width: '*', text: '' }] },
                 ],
             },
             { width: 85, stack: [{ text: '', fontSize: 1 }, mushakBox] },
