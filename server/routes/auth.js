@@ -79,7 +79,7 @@ const isAuthenticated = async (req, res, next) => {
         req.sessionId = sessionId;
         next();
     } catch (err) {
-        console.error('Auth middleware error');
+        console.error('Auth middleware error:', err);
         return res.status(500).json({ error: 'Authentication error' });
     }
 };
@@ -106,7 +106,12 @@ router.post('/login', async (req, res) => {
         }
 
         // Invalidate all existing sessions for this user before creating a new one
-        await authRepository.deleteUserSessions(user.id);
+        try {
+            await authRepository.deleteUserSessions(user.id);
+        } catch (sessionErr) {
+            console.error('Failed to clear old sessions:', sessionErr.message);
+            // Non-fatal: continue with login even if old session cleanup fails
+        }
 
         // Create session
         const sessionId = generateSessionId();
@@ -135,7 +140,7 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Login Error');
+        console.error('Login Error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -147,7 +152,7 @@ router.post('/logout', isAuthenticated, async (req, res) => {
         res.clearCookie('session_id', { path: '/' });
         res.json({ message: 'Logout successful' });
     } catch (err) {
-        console.error('Logout Error');
+        console.error('Logout Error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -195,7 +200,7 @@ router.post('/change-password', isAuthenticated, async (req, res) => {
 
         res.json({ message: 'Password changed successfully' });
     } catch (err) {
-        console.error('Change Password Error');
+        console.error('Change Password Error:', err);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -205,7 +210,7 @@ setInterval(async () => {
     try {
         await authRepository.deleteExpiredSessions();
     } catch (err) {
-        console.error('Error cleaning up sessions');
+        console.error('Error cleaning up sessions:', err);
     }
 }, 3600000); // Run every hour
 
@@ -263,7 +268,7 @@ router.post('/seed', async (req, res) => {
             user: { id: newUser.id, username: newUser.username }
         });
     } catch (err) {
-        console.error('Seed Error');
+        console.error('Seed Error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

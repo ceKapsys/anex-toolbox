@@ -103,7 +103,7 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
 
         res.json({ message: 'Invoice sent successfully', invoice_no: invoice.invoice_no });
     } catch (error) {
-        console.error('Email sending error');
+        console.error('Email sending error:', error);
         res.status(500).json({ error: 'Failed to send invoice email' });
     }
 });
@@ -150,7 +150,7 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
 
         res.json({ message: 'Quotation sent successfully' });
     } catch (error) {
-        console.error('Email sending error');
+        console.error('Email sending error:', error);
         res.status(500).json({ error: 'Failed to send quotation email' });
     }
 });
@@ -162,7 +162,7 @@ router.post('/test-smtp', isAuthenticated, async (req, res) => {
         await transporter.verify();
         res.json({ message: 'SMTP connection successful' });
     } catch (error) {
-        console.error('SMTP test error');
+        console.error('SMTP test error:', error);
         res.status(500).json({ error: 'SMTP connection failed' });
     }
 });

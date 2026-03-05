@@ -20,8 +20,7 @@ export const AuthProvider = ({ children }) => {
         if (storedSessionId) {
             verifySession(storedSessionId);
         } else {
-            // Still try cookie-based verification
-            verifySession(null);
+            setLoading(false);
         }
     }, []);
 
