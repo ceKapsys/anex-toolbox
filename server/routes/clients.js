@@ -4,30 +4,32 @@ const clientRepository = require('../repositories/ClientRepository');
 const { isAuthenticated } = require('./auth');
 
 // GET all clients
-router.get('/', async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
     try {
         const clients = await clientRepository.findAll({
             orderBy: { name: 'asc' }
         });
         res.json(clients);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Clients list error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve clients' });
     }
 });
 
 // GET one client
-router.get('/:id', async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res) => {
     try {
         const client = await clientRepository.findById(req.params.id);
         if (!client) return res.status(404).json({ error: 'Client not found' });
         res.json(client);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client get error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve client' });
     }
 });
 
 // Check for duplicate client by name
-router.get('/check/:name', async (req, res) => {
+router.get('/check/:name', isAuthenticated, async (req, res) => {
     try {
         const name = req.params.name;
         const client = await clientRepository.findByName(name);
@@ -36,7 +38,8 @@ router.get('/check/:name', async (req, res) => {
         }
         res.json({ exists: false });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client check error:', err.message);
+        res.status(500).json({ error: 'Failed to check client' });
     }
 });
 
@@ -75,7 +78,8 @@ router.post('/', isAuthenticated, async (req, res) => {
 
         res.json(newClient);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client create error:', err.message);
+        res.status(500).json({ error: 'Failed to create client' });
     }
 });
 
@@ -88,7 +92,8 @@ router.put('/:id', isAuthenticated, async (req, res) => {
         });
         res.json({ message: 'Updated', client: updatedClient });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client update error:', err.message);
+        res.status(500).json({ error: 'Failed to update client' });
     }
 });
 
@@ -98,7 +103,8 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         await clientRepository.delete(req.params.id);
         res.json({ message: 'Deleted' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client delete error:', err.message);
+        res.status(500).json({ error: 'Failed to delete client' });
     }
 });
 
@@ -119,13 +125,14 @@ router.post('/migrate-codes', isAuthenticated, async (req, res) => {
                 await clientRepository.update(client.id, { client_code: clientCode });
                 migratedCount++;
             } catch (err) {
-                console.error(`Failed to generate code for client ${client.id}:`, err);
+                console.error(`Failed to generate code for client ${client.id}`);
             }
         }
 
         res.json({ message: 'Migration complete', migrated: migratedCount });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Client migration error:', err.message);
+        res.status(500).json({ error: 'Failed to migrate client codes' });
     }
 });
 

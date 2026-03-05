@@ -9,24 +9,26 @@ const parseJson = (row) => {
     return row;
 };
 
-router.get('/', async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
     try {
         const quotations = await quotationRepository.findAll({
             orderBy: { id: 'desc' }
         });
         res.json(quotations.map(parseJson));
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Quotations list error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve quotations' });
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res) => {
     try {
         const quotation = await quotationRepository.findById(req.params.id);
         if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
         res.json(parseJson(quotation));
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Quotation get error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve quotation' });
     }
 });
 
@@ -57,8 +59,8 @@ router.post('/', isAuthenticated, async (req, res) => {
         const newQuotation = await quotationRepository.create(data);
         res.json({ id: newQuotation.id, message: 'Quotation Created' });
     } catch (err) {
-        console.error('Quotation Create Error:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Quotation Create Error');
+        res.status(500).json({ error: 'Failed to create quotation' });
     }
 });
 
@@ -89,11 +91,11 @@ router.put('/:id', isAuthenticated, async (req, res) => {
         await quotationRepository.update(req.params.id, data);
         res.json({ message: 'Quotation updated successfully' });
     } catch (err) {
-        console.error('Quotation Update Error:', err);
+        console.error('Quotation Update Error');
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Quotation not found' });
         }
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to update quotation' });
     }
 });
 
@@ -105,7 +107,8 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Quotation not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Quotation delete error:', err.message);
+        res.status(500).json({ error: 'Failed to delete quotation' });
     }
 });
 

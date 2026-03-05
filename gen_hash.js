@@ -1,3 +1,8 @@
 const bcrypt = require('bcryptjs');
-const hash = bcrypt.hashSync('password123', 10);
+const password = process.argv[2];
+if (!password) {
+    console.error('Usage: node gen_hash.js <password>');
+    process.exit(1);
+}
+const hash = bcrypt.hashSync(password, 12);
 console.log(hash);

@@ -41,6 +41,14 @@ class AuthRepository extends BaseRepository {
             },
         });
     }
+
+    async deleteUserSessions(userId) {
+        return await this.sessionModel.deleteMany({
+            where: {
+                user_id: userId,
+            },
+        });
+    }
 }
 
 module.exports = new AuthRepository();

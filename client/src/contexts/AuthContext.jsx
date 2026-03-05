@@ -11,34 +11,44 @@ export const AuthProvider = ({ children }) => {
 
     const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+    // Configure axios to include cookies
+    const axiosConfig = { withCredentials: true };
+
     // Check if user is already logged in (on mount)
     useEffect(() => {
         const storedSessionId = localStorage.getItem('sessionId');
         if (storedSessionId) {
             verifySession(storedSessionId);
         } else {
-            setLoading(false);
+            // Still try cookie-based verification
+            verifySession(null);
         }
     }, []);
 
     const verifySession = async (sid) => {
         try {
+            const headers = {};
+            if (sid) headers['x-session-id'] = sid;
+
             const response = await axios.get(`${API_URL}/auth/verify`, {
-                headers: {
-                    'x-session-id': sid
-                }
+                headers,
+                ...axiosConfig
             });
 
             if (response.data.authenticated) {
                 setUser(response.data.user);
                 setSessionId(sid);
-                localStorage.setItem('sessionId', sid);
+                if (sid) localStorage.setItem('sessionId', sid);
             } else {
                 logout();
             }
         } catch (error) {
             console.error('Session verification failed:', error);
-            logout();
+            // Clear stale localStorage sessionId
+            localStorage.removeItem('sessionId');
+            setUser(null);
+            setSessionId(null);
+            setLoading(false);
         } finally {
             setLoading(false);
         }
@@ -50,11 +60,12 @@ export const AuthProvider = ({ children }) => {
             const response = await axios.post(`${API_URL}/auth/login`, {
                 username,
                 password
-            });
+            }, axiosConfig);
 
             const { sessionId: newSessionId, user: userData } = response.data;
             setSessionId(newSessionId);
             setUser(userData);
+            // Keep localStorage as fallback for x-session-id header
             localStorage.setItem('sessionId', newSessionId);
             return { success: true };
         } catch (error) {
@@ -66,13 +77,13 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            if (sessionId) {
-                await axios.post(`${API_URL}/auth/logout`, {}, {
-                    headers: {
-                        'x-session-id': sessionId
-                    }
-                });
-            }
+            const headers = {};
+            if (sessionId) headers['x-session-id'] = sessionId;
+
+            await axios.post(`${API_URL}/auth/logout`, {}, {
+                headers,
+                ...axiosConfig
+            });
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
@@ -84,13 +95,15 @@ export const AuthProvider = ({ children }) => {
 
     const changePassword = async (currentPassword, newPassword) => {
         try {
+            const headers = {};
+            if (sessionId) headers['x-session-id'] = sessionId;
+
             await axios.post(`${API_URL}/auth/change-password`, {
                 currentPassword,
                 newPassword
             }, {
-                headers: {
-                    'x-session-id': sessionId
-                }
+                headers,
+                ...axiosConfig
             });
             return { success: true };
         } catch (error) {

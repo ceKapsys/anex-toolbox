@@ -4,25 +4,27 @@ const quotationTermRepository = require('../repositories/QuotationTermRepository
 const { isAuthenticated } = require('./auth');
 
 // Get all quotation terms
-router.get('/', async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
     try {
         const terms = await quotationTermRepository.findAll({
             orderBy: { id: 'desc' }
         });
         res.json(terms || []);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Quotation terms list error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve quotation terms' });
     }
 });
 
 // Get single quotation term
-router.get('/:id', async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res) => {
     try {
         const term = await quotationTermRepository.findById(req.params.id);
         if (!term) return res.status(404).json({ error: 'Term not found' });
         res.json(term);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Quotation term get error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve quotation term' });
     }
 });
 
@@ -33,7 +35,8 @@ router.post('/', isAuthenticated, async (req, res) => {
         const newTerm = await quotationTermRepository.create({ name, description });
         res.json({ id: newTerm.id, message: 'Quotation Term created' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Quotation term create error:', err.message);
+        res.status(500).json({ error: 'Failed to create quotation term' });
     }
 });
 
@@ -47,7 +50,8 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Term not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Quotation term update error:', err.message);
+        res.status(500).json({ error: 'Failed to update quotation term' });
     }
 });
 
@@ -60,7 +64,8 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Term not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Quotation term delete error:', err.message);
+        res.status(500).json({ error: 'Failed to delete quotation term' });
     }
 });
 

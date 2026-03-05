@@ -12,4 +12,13 @@ export default defineConfig({
       include: [/pdfmake/, /node_modules/],
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

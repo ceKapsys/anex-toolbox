@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const request = async (endpoint, options = {}) => {
     const url = `${API_URL}${endpoint}`;
 
-    // Get session ID from localStorage
+    // Get session ID from localStorage (backward compatibility fallback)
     const sessionId = localStorage.getItem('sessionId');
 
     const headers = {
@@ -15,6 +15,7 @@ const request = async (endpoint, options = {}) => {
     const config = {
         ...options,
         headers,
+        credentials: 'include', // Send httpOnly cookies
     };
 
     try {
@@ -45,7 +46,12 @@ const requestFormData = async (endpoint, formData) => {
     if (sessionId) headers['x-session-id'] = sessionId;
 
     try {
-        const response = await fetch(url, { method: 'POST', headers, body: formData });
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+            credentials: 'include', // Send httpOnly cookies
+        });
         if (!response.ok) {
             const errorBody = await response.json().catch(() => ({}));
             if (response.status === 401) {

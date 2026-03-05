@@ -2,6 +2,40 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.12.0] - 2026-03-05
+
+### Security
+- **Helmet**: Added security headers (X-Content-Type-Options, X-Frame-Options, HSTS, CSP, etc.)
+- **Rate Limiting**: Global rate limiter (500 req/15min) and strict auth limiter (20 req/15min) on login
+- **httpOnly Cookies**: Session IDs now stored in httpOnly cookies with secure/sameSite flags, falling back to x-session-id header for backward compatibility
+- **Authenticated GET Routes**: All data-fetching endpoints (clients, invoices, quotations, settings, services, terms) now require authentication
+- **SMTP Password Masking**: Settings GET endpoint masks smtp_config.password in responses
+- **Seed Endpoint Protected**: `/api/auth/seed` now requires SEED_SECRET env var; credentials read from SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD env vars
+- **Hardcoded Credentials Removed**: Removed all plaintext passwords from source code, scripts, and documentation
+- **Password Policy**: Change-password now requires 8+ chars with uppercase, lowercase, number, and special character
+- **Session Fixation Prevention**: Old sessions invalidated on new login
+- **Error Message Sanitization**: All API error responses return generic messages; raw errors logged server-side only
+- **Health Endpoint Hardened**: Removed DATABASE_URL and NODE_ENV leakage from /api/health
+- **Email HTML Sanitization**: Script tags stripped from email body HTML before sending
+- **File Upload Validation**: Multer now only accepts PDF files (application/pdf)
+- **Body Parser Limit Reduced**: JSON body limit reduced from 50MB to 10MB
+- **CORS Hardened**: Dynamic origin validation instead of static array
+- **ID Validation**: BaseRepository now validates numeric IDs, rejecting NaN
+- **bcrypt Rounds Increased**: Hashing rounds increased from 10 to 12
+
+### Changed
+- **Vite Dev Proxy**: Added /api proxy to localhost:5000 for seamless cookie-based dev
+- **Client Auth**: AuthContext and api.js now send credentials: 'include' for cookie support
+
+### Removed
+- **express-session**: Removed unused dependency
+
+### Environment Variables Required
+- `SEED_SECRET` — Secret for seed endpoint authorization
+- `SEED_ADMIN_EMAIL` — Admin email for seed
+- `SEED_ADMIN_PASSWORD` — Admin password for seed
+- `SEED_ADMIN_NAME` — Admin display name for seed (optional)
+
 ## [3.11.6] - 2026-03-01
 
 ### Fixed
@@ -324,7 +358,7 @@ All notable changes to ANEX App are documented in this file.
 - **Quotation Delete**: Quotation deletion now working correctly with proper API route.
 
 ### Security
-- Default admin credentials: username: `admin`, password: `admin123` (change after first login)
+- Admin credentials configured via environment variables (SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD)
 - All data modification routes require valid session authentication
 - Automatic redirect to login page on unauthorized access
 

@@ -92,7 +92,7 @@ You can also **manually copy this folder to an external drive** for safekeeping.
 ## Current Clean Database Info
 - **Created**: 2026-02-12
 - **Tables**: All 10 tables present and working
-- **Admin User**: admin / admin123
+- **Admin User**: Configured via SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD environment variables
 - **Status**: Ready to use without any errors
 
 ---

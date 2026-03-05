@@ -14,25 +14,27 @@ const parseJson = (row) => {
 };
 
 // GET all invoices
-router.get('/', async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
     try {
         const invoices = await invoiceRepository.findAll({
             orderBy: { id: 'desc' }
         });
         res.json(invoices.map(parseJson));
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Invoices list error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve invoices' });
     }
 });
 
 // GET single invoice
-router.get('/:id', async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res) => {
     try {
         const invoice = await invoiceRepository.findById(req.params.id);
         if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
         res.json(parseJson(invoice));
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Invoice get error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve invoice' });
     }
 });
 
@@ -70,7 +72,8 @@ router.post('/', isAuthenticated, async (req, res) => {
         const newInvoice = await invoiceRepository.create(data);
         res.json({ id: newInvoice.id, message: 'Invoice Created' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Invoice create error:', err.message);
+        res.status(500).json({ error: 'Failed to create invoice' });
     }
 });
 
@@ -84,7 +87,8 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Invoice not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Invoice status update error:', err.message);
+        res.status(500).json({ error: 'Failed to update invoice status' });
     }
 });
 
@@ -105,7 +109,8 @@ router.patch('/:id/payment', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Invoice not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Invoice payment update error:', err.message);
+        res.status(500).json({ error: 'Failed to update payment details' });
     }
 });
 
@@ -148,7 +153,8 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Invoice not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Invoice update error:', err.message);
+        res.status(500).json({ error: 'Failed to update invoice' });
     }
 });
 
@@ -161,7 +167,8 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Invoice not found' });
         }
-        res.status(500).json({ error: err.message });
+        console.error('Invoice delete error:', err.message);
+        res.status(500).json({ error: 'Failed to delete invoice' });
     }
 });
 

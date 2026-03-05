@@ -8,7 +8,18 @@ const settingRepository = require('../repositories/SettingRepository');
 const { isAuthenticated } = require('./auth');
 
 // Multer: keep uploaded PDF in memory (no disk writes)
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+// Only allow PDF files
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF files are allowed'), false);
+        }
+    }
+});
 
 // Read SMTP config from settings DB
 const getSmtpConfig = async () => {
@@ -74,12 +85,16 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
             });
         }
 
+        // Sanitize HTML body: strip <script> tags
+        const sanitizedBody = (body || '<p>Please find the attached invoice.</p>')
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: to,
             cc: cc || undefined,
             subject: subject || `Invoice ${invoice.invoice_no}`,
-            html: body || `<p>Please find the attached invoice.</p>`,
+            html: sanitizedBody,
             attachments,
         };
 
@@ -88,8 +103,8 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
 
         res.json({ message: 'Invoice sent successfully', invoice_no: invoice.invoice_no });
     } catch (error) {
-        console.error('Email sending error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Email sending error');
+        res.status(500).json({ error: 'Failed to send invoice email' });
     }
 });
 
@@ -117,12 +132,16 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
             });
         }
 
+        // Sanitize HTML body: strip <script> tags
+        const sanitizedBody = (body || '<p>Please find the attached quotation.</p>')
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: to,
             cc: cc || undefined,
             subject: subject || `Quotation for ${quotation.to_company}`,
-            html: body || `<p>Please find the attached quotation.</p>`,
+            html: sanitizedBody,
             attachments,
         };
 
@@ -131,8 +150,8 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
 
         res.json({ message: 'Quotation sent successfully' });
     } catch (error) {
-        console.error('Email sending error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Email sending error');
+        res.status(500).json({ error: 'Failed to send quotation email' });
     }
 });
 
@@ -143,7 +162,8 @@ router.post('/test-smtp', isAuthenticated, async (req, res) => {
         await transporter.verify();
         res.json({ message: 'SMTP connection successful' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('SMTP test error');
+        res.status(500).json({ error: 'SMTP connection failed' });
     }
 });
 
