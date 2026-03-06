@@ -20,7 +20,8 @@ app.use(cookieParser());
 const allowedOrigins = [
     'http://localhost:5173',
     'https://anex-toolbox.vercel.app',
-    'https://anex-toolbox-qxqi.vercel.app'
+    'https://anex-toolbox-qxqi.vercel.app',
+    'https://toolbox.anexbusiness.com'
 ];
 app.use(cors({
     origin: function (origin, callback) {
@@ -29,7 +30,8 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error('Not allowed by CORS'));
+        // Reject unlisted origins without throwing (avoids 500)
+        return callback(null, false);
     },
     credentials: true
 }));
