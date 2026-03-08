@@ -279,12 +279,10 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     });
 
     // ── Financial Summary ─────────────────────────────────────────────────────
-    // Right-aligned block at 48% of content width (≈ 255pt).
-    // Matches: .financial-summary { justify-content:flex-end }
-    //          .summary-table { width:48% }
+    // Right-aligned block matching items table right edge.
     // Row fill colours: subtotal=#bdc5c9, vat=#5f929e, total=#1a4f5a
-    const SUMMARY_W = Math.round(CONTENT_W * 0.48); // ≈ 255pt
-    const VAL_W = 120;
+    const SUMMARY_W = Math.round(CONTENT_W * 0.40); // ≈ 212pt
+    const VAL_W = 100;
     const LABEL_W = SUMMARY_W - VAL_W;
 
     const sumRow = (label, value, valueBg) => [
@@ -443,7 +441,7 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
 
         // Calculate footer area height so content doesn't overlap
         const footerImgHeight = await getScaledImageHeight(footerDataUrl, PAGE_W);
-        const disclaimerHeight = data.disclaimer ? 20 : 0;
+        const disclaimerHeight = data.disclaimer ? 14 : 0;
         const footerAreaHeight = footerImgHeight + disclaimerHeight;
 
         const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
