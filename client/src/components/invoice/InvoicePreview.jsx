@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Eye, Download, Loader2 } from 'lucide-react';
 import InvoiceTemplate from '../templates/InvoiceTemplate';
 import { downloadInvoicePDF } from '../../utils/invoicePdfMake';

@@ -25,7 +25,6 @@ import {
     BarChart,
     Bar
 } from 'recharts';
-import { motion } from 'framer-motion';
 
 import api from '../lib/api';
 
@@ -55,6 +54,23 @@ const Dashboard = () => {
         { name: 'Sat', value: 2390 },
         { name: 'Sun', value: 3490 },
     ];
+
+    const processQuotationData = (data) => {
+        const monthlyGroups = {};
+
+        data.forEach(q => {
+            const date = new Date(q.date);
+            const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+
+            if (!monthlyGroups[monthKey]) {
+                monthlyGroups[monthKey] = { name: monthKey, passed: 0, rejected: 0 };
+            }
+            if (q.status === 'Passed') monthlyGroups[monthKey].passed += 1;
+            if (q.status === 'Rejected') monthlyGroups[monthKey].rejected += 1;
+        });
+
+        setMonthlyQuotationData(Object.values(monthlyGroups));
+    };
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -141,23 +157,6 @@ const Dashboard = () => {
 
         fetchDashboardData();
     }, []);
-
-    const processQuotationData = (data) => {
-        const monthlyGroups = {};
-
-        data.forEach(q => {
-            const date = new Date(q.date);
-            const monthKey = date.toLocaleString('default', { month: 'short', year: 'numeric' });
-
-            if (!monthlyGroups[monthKey]) {
-                monthlyGroups[monthKey] = { name: monthKey, passed: 0, rejected: 0 };
-            }
-            if (q.status === 'Passed') monthlyGroups[monthKey].passed += 1;
-            if (q.status === 'Rejected') monthlyGroups[monthKey].rejected += 1;
-        });
-
-        setMonthlyQuotationData(Object.values(monthlyGroups));
-    };
 
     const formatCurrency = (amount) => {
         return `Tk ${(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

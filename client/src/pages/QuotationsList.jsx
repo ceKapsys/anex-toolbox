@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Eye, Download, Send, Copy, Trash2, Search, FileText, Check, X, MoreHorizontal, Loader2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
 import { downloadQuotationPDF, getQuotationPDFBlob } from '../utils/quotationPdfMake';
@@ -20,7 +20,6 @@ const QuotationsList = () => {
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
     const [settings, setSettings] = useState(null);
     const [downloadingId, setDownloadingId] = useState(null);
-    const navigate = useNavigate();
 
     const loadQuotations = async () => {
         try {
@@ -141,21 +140,6 @@ const QuotationsList = () => {
         }
     };
 
-    const handleDuplicate = async (quotation) => {
-        try {
-            const newQuotation = {
-                ...quotation,
-                id: undefined,
-                date: new Date().toISOString().split('T')[0],
-                status: 'Draft'
-            };
-            await api.quotations.create(newQuotation);
-            loadQuotations();
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     const handleSendEmail = async (mailData) => {
         try {
             const quotation = mailModal.quotation;
@@ -221,6 +205,7 @@ const QuotationsList = () => {
             setMailModal({ isOpen: false, quotation: null });
             await loadQuotations();
         } catch (err) {
+            console.error('Failed to send quotation email:', err);
             throw err;
         }
     };

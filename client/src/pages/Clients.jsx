@@ -159,7 +159,7 @@ const Clients = () => {
             // First, migrate any clients without client_code
             try {
                 await api.post('/clients/migrate-codes', {});
-            } catch (e) {
+            } catch {
                 // Ignore migration errors, proceed with fetch
             }
 

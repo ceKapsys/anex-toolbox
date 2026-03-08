@@ -7,7 +7,6 @@ import '../../assets/css/invoice-print.css';
  * Renders the exact HTML structure required for the invoice PDF (Mushak 6.3 compliant).
  */
 const InvoiceTemplate = React.forwardRef(({ data }, ref) => {
-    console.log('InvoiceTemplate Rendering:', { data, ref });
     if (!data) return null;
 
     const {

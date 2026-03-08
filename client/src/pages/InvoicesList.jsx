@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle, Loader2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
 import { downloadInvoicePDF, getInvoicePDFBlob } from '../utils/invoicePdfMake';
@@ -128,7 +128,6 @@ const InvoicesList = () => {
     const [paymentModal, setPaymentModal] = useState({ isOpen: false, invoice: null });
     const [mailModal, setMailModal] = useState({ isOpen: false, invoice: null });
     const [settings, setSettings] = useState(null);
-    const navigate = useNavigate();
 
     const loadInvoices = async () => {
         try {
@@ -168,8 +167,7 @@ const InvoicesList = () => {
     };
 
     const handleSendEmail = async (mailData) => {
-        try {
-            const invoice = mailModal.invoice;
+        const invoice = mailModal.invoice;
             const items = invoice.items_data || [];
             const totals = invoice.totals_data || {};
             const client = invoice.client_snapshot || {};
@@ -237,9 +235,6 @@ const InvoicesList = () => {
             alert('Invoice sent successfully!');
             setMailModal({ isOpen: false, invoice: null });
             await loadInvoices();
-        } catch (err) {
-            throw err;
-        }
     };
 
     const openMailModal = (invoice) => {

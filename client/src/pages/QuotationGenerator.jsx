@@ -3,7 +3,6 @@ import { Plus, Trash2, Download, Eye, Save, ArrowLeft, Loader2 } from 'lucide-re
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import QuotationTemplate from '../components/templates/QuotationTemplate';
 import { downloadQuotationPDF } from '../utils/quotationPdfMake';
-import clsx from 'clsx';
 import api from '../lib/api';
 
 const QuotationGenerator = () => {
@@ -11,7 +10,6 @@ const QuotationGenerator = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const quotationId = searchParams.get('id');
-    const [activeTab, setActiveTab] = useState('edit'); // edit | preview
     const [saving, setSaving] = useState(false);
     const [clients, setClients] = useState([]);
     const [selectedClientId, setSelectedClientId] = useState('');
@@ -19,7 +17,6 @@ const QuotationGenerator = () => {
     const [signatories, setSignatories] = useState([]);
     const [serviceType, setServiceType] = useState('GEN');
     const [services, setServices] = useState([]);
-    const [quotations, setQuotations] = useState([]);
 
     // Generate random 4-character alphanumeric code
     const generateRandomCode = () => {
@@ -108,12 +105,6 @@ const QuotationGenerator = () => {
                 setServices(Array.isArray(res) ? res : []);
             } catch (err) { console.error(err); }
         };
-        const loadQuotations = async () => {
-            try {
-                const res = await api.quotations.list();
-                setQuotations(Array.isArray(res) ? res : []);
-            } catch (err) { console.error(err); }
-        };
         const loadQuotationById = async (id) => {
             try {
                 const quotation = await api.quotations.get(id);
@@ -152,7 +143,6 @@ const QuotationGenerator = () => {
         loadClients();
         loadTerms();
         loadServices();
-        loadQuotations();
 
         // Settings must load first so header/footer/disclaimer/signatories
         // are available before quotation data overlays the state
@@ -231,10 +221,6 @@ const QuotationGenerator = () => {
             items: updatedItems
         }));
     }, [JSON.stringify(data.items.map(i => [i.qty, i.price])), data.vat_percentage]);
-
-    const handleClientChange = (e) => {
-        setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-    };
 
     const handleClientSelect = (e) => {
         const id = e.target.value;

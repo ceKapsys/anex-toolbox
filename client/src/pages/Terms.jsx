@@ -81,6 +81,39 @@ const TermModal = ({ isOpen, term, activeType, onClose, onSave }) => {
     );
 };
 
+const TermList = ({ title, type, items, onOpenModal, onDelete }) => (
+    <div className="flex-1 rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] min-h-[500px]">
+        <div className="flex items-center justify-between mb-6">
+            <div>
+                <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+                <p className="text-xs text-slate-500">Manage {type} terms</p>
+            </div>
+            <button
+                onClick={() => onOpenModal(type)}
+                className="inline-flex items-center gap-2 rounded-full bg-[#0f0f10] px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+            >
+                <Plus className="h-3 w-3" /> Add Term
+            </button>
+        </div>
+
+        <div className="space-y-3">
+            {items.length === 0 && (
+                <div className="text-center py-10 text-slate-400 text-sm">No terms added yet.</div>
+            )}
+            {items.map((term) => (
+                <div key={term.id} className="group relative rounded-2xl border border-slate-100 bg-[#fbf9f7] p-4 transition hover:shadow-md">
+                    <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition group-hover:opacity-100">
+                        <button onClick={() => onOpenModal(type, term)} className="text-slate-400 hover:text-slate-600"><Edit2 className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => onDelete(term.id, type)} className="text-slate-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                    <h3 className="font-semibold text-slate-800 text-sm mb-1 pr-12">{term.name}</h3>
+                    <p className="text-xs text-slate-600 line-clamp-3 whitespace-pre-wrap">{term.description}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 const Terms = () => {
     const [invoiceTerms, setInvoiceTerms] = useState([]);
     const [quotationTerms, setQuotationTerms] = useState([]);
@@ -149,39 +182,6 @@ const Terms = () => {
         }
     };
 
-    const TermList = ({ title, type, items }) => (
-        <div className="flex-1 rounded-[28px] bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] min-h-[500px]">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-                    <p className="text-xs text-slate-500">Manage {type} terms</p>
-                </div>
-                <button
-                    onClick={() => handleOpenModal(type)}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#0f0f10] px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-                >
-                    <Plus className="h-3 w-3" /> Add Term
-                </button>
-            </div>
-
-            <div className="space-y-3">
-                {items.length === 0 && (
-                    <div className="text-center py-10 text-slate-400 text-sm">No terms added yet.</div>
-                )}
-                {items.map((term) => (
-                    <div key={term.id} className="group relative rounded-2xl border border-slate-100 bg-[#fbf9f7] p-4 transition hover:shadow-md">
-                        <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition group-hover:opacity-100">
-                            <button onClick={() => handleOpenModal(type, term)} className="text-slate-400 hover:text-slate-600"><Edit2 className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => handleDelete(term.id, type)} className="text-slate-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </div>
-                        <h3 className="font-semibold text-slate-800 text-sm mb-1 pr-12">{term.name}</h3>
-                        <p className="text-xs text-slate-600 line-clamp-3 whitespace-pre-wrap">{term.description}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
     return (
         <div className="min-h-full px-10 py-8 space-y-8">
             <div className="flex items-center justify-between">
@@ -192,8 +192,8 @@ const Terms = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
-                <TermList title="Invoice Terms" type="invoice" items={invoiceTerms} />
-                <TermList title="Quotation Terms" type="quotation" items={quotationTerms} />
+                <TermList title="Invoice Terms" type="invoice" items={invoiceTerms} onOpenModal={handleOpenModal} onDelete={handleDelete} />
+                <TermList title="Quotation Terms" type="quotation" items={quotationTerms} onOpenModal={handleOpenModal} onDelete={handleDelete} />
             </div>
 
             <TermModal

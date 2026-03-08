@@ -1,6 +1,6 @@
 {
   "name": "anex-toolbox",
-  "version": "3.12.2",
+  "version": "3.12.3",
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
