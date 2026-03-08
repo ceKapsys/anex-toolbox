@@ -2,6 +2,12 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.12.1] - 2026-03-08
+
+### Fixed
+- **Quotation PDF summary alignment**: Summary table label column now uses auto-width (`'*'`) so it stays within its allocated space and right edge aligns exactly with the items table
+- **Quotation PDF footer space**: Removed footer callback approach; disclaimer and footer image are now inline content with `pageMargins: [0,0,0,0]`, eliminating all whitespace after the footer
+
 ## [3.12.0] - 2026-03-05
 
 ### Security

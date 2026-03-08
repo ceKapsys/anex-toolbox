@@ -64,16 +64,6 @@ const toDataUrl = async (url) => {
     }
 };
 
-// Get scaled height of an image loaded as a data URL
-const getScaledImageHeight = (dataUrl, scaledWidth) =>
-    new Promise((resolve) => {
-        if (!dataUrl) { resolve(0); return; }
-        const img = new Image();
-        img.onload = () => resolve(img.naturalHeight * (scaledWidth / img.naturalWidth));
-        img.onerror = () => resolve(0);
-        img.src = dataUrl;
-    });
-
 // Reusable inline pdfmake layout objects
 const boxLayout = {
     hLineColor: () => C.border,
@@ -87,7 +77,7 @@ const boxLayout = {
 };
 
 // ─── Document builder ─────────────────────────────────────────────────────────
-const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
+const buildDoc = (data, headerDataUrl, footerDataUrl) => {
     const {
         quotation_number,
         quotation_date,
@@ -283,7 +273,6 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     // Row fill colours: subtotal=#bdc5c9, vat=#5f929e, total=#1a4f5a
     const SUMMARY_W = Math.round(CONTENT_W * 0.40); // ≈ 212pt
     const VAL_W = 100;
-    const LABEL_W = SUMMARY_W - VAL_W;
 
     const sumRow = (label, value, valueBg) => [
         {
@@ -307,7 +296,7 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     const summaryTable = {
         width: SUMMARY_W,
         table: {
-            widths: [LABEL_W, VAL_W],
+            widths: ['*', VAL_W],
             body: [
                 sumRow('Subtotal', fmt(subtotal), C.subtotalBg),
                 sumRow(`VAT (${vat_percentage}%)`, fmt(vat_amount), C.tealMed),
@@ -402,11 +391,9 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
         });
     }
 
-    // ── Footer content (disclaimer + footer image) ────────────────────────────
-    // Rendered via pdfmake footer callback so they stick to page bottom
-    const footerStack = [];
+    // ── Disclaimer ────────────────────────────────────────────────────────────
     if (disclaimer) {
-        footerStack.push({
+        content.push({
             text: disclaimer,
             fontSize: 7.5,
             color: C.light,
@@ -414,8 +401,10 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
             margin: [H_PAD, 4, H_PAD, 0],
         });
     }
+
+    // ── Footer image (full bleed, no bottom margin) ─────────────────────────
     if (footerDataUrl) {
-        footerStack.push({
+        content.push({
             image: footerDataUrl,
             width: PAGE_W,
             margin: [0, 0, 0, 0],
@@ -424,10 +413,9 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
 
     return {
         pageSize: 'A4',
-        pageMargins: [0, 0, 0, footerAreaHeight],
+        pageMargins: [0, 0, 0, 0],
         defaultStyle: { font: 'Roboto', fontSize: 10, color: C.text },
         content,
-        footer: footerStack.length > 0 ? () => ({ stack: footerStack }) : undefined,
     };
 };
 
@@ -438,13 +426,7 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
             toDataUrl(data.header_image),
             toDataUrl(data.footer_image),
         ]);
-
-        // Calculate footer area height so content doesn't overlap
-        const footerImgHeight = await getScaledImageHeight(footerDataUrl, PAGE_W);
-        const disclaimerHeight = data.disclaimer ? 14 : 0;
-        const footerAreaHeight = footerImgHeight + disclaimerHeight;
-
-        const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
+        const docDef = buildDoc(data, headerDataUrl, footerDataUrl);
         pdfMake.createPdf(docDef).download(filename);
     } catch (err) {
         console.error('pdfmake quotation generation failed:', err);
@@ -457,12 +439,7 @@ export const getQuotationPDFBlob = async (data) => {
         toDataUrl(data.header_image),
         toDataUrl(data.footer_image),
     ]);
-
-    const footerImgHeight = await getScaledImageHeight(footerDataUrl, PAGE_W);
-    const disclaimerHeight = data.disclaimer ? 20 : 0;
-    const footerAreaHeight = footerImgHeight + disclaimerHeight;
-
-    const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
+    const docDef = buildDoc(data, headerDataUrl, footerDataUrl);
     return new Promise((resolve, reject) => {
         try {
             pdfMake.createPdf(docDef).getBlob((blob) => {
