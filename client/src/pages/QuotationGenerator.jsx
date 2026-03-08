@@ -84,7 +84,7 @@ const QuotationGenerator = () => {
                     footer_image: s.quotation_footer || prev.footer_image,
                     disclaimer: s.quotation_disclaimer || prev.disclaimer,
                     contact_details: sigs.length > 0
-                        ? (sigs.find(sig => sig.name === prev.contact_details.name) || sigs[0])
+                        ? (sigs.find(sig => sig.name?.trim().toLowerCase() === prev.contact_details.name?.trim().toLowerCase()) || sigs[0])
                         : prev.contact_details
                 }));
             } catch (err) {
@@ -113,7 +113,7 @@ const QuotationGenerator = () => {
                     const clientId = quotation.client_id || quotation.id;
                     setSelectedClientId(clientId);
 
-                    const matchedSig = sigs.find(s => s.name === quotation.contact_name);
+                    const matchedSig = sigs.find(s => s.name?.trim().toLowerCase() === quotation.contact_name?.trim().toLowerCase());
 
                     setData(prev => ({
                         ...prev,
@@ -227,33 +227,37 @@ const QuotationGenerator = () => {
         setSelectedClientId(id);
         const client = clients.find((c) => String(c.id) === String(id));
         if (client) {
-            setData({
-                ...data,
+            setData(prev => ({
+                ...prev,
                 client: {
                     name: client.name || client.company || '',
                     address: client.address || '',
                     attention: client.attn || ''
                 }
-            });
+            }));
         }
     };
 
     const handleItemChange = (index, field, value) => {
-        const newItems = [...data.items];
-        newItems[index][field] = value;
-        setData({ ...data, items: newItems });
-    };
-
-    const addItem = () => {
-        setData({
-            ...data,
-            items: [...data.items, { title: '', description: '', qty: 1, unit: 'Pcs', price: 0, line_total: 0 }]
+        setData(prev => {
+            const newItems = [...prev.items];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return { ...prev, items: newItems };
         });
     };
 
+    const addItem = () => {
+        setData(prev => ({
+            ...prev,
+            items: [...prev.items, { title: '', description: '', qty: 1, unit: 'Pcs', price: 0, line_total: 0 }]
+        }));
+    };
+
     const removeItem = (index) => {
-        const newItems = data.items.filter((_, i) => i !== index);
-        setData({ ...data, items: newItems });
+        setData(prev => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index)
+        }));
     };
 
     const [generating, setGenerating] = useState(false);
@@ -365,7 +369,7 @@ const QuotationGenerator = () => {
                                 <input
                                     type="date"
                                     value={data.quotation_date}
-                                    onChange={e => setData({ ...data, quotation_date: e.target.value })}
+                                    onChange={e => setData(prev => ({ ...prev, quotation_date: e.target.value }))}
                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                 />
                             </div>
@@ -461,7 +465,7 @@ const QuotationGenerator = () => {
                                 <input
                                     type="number"
                                     value={data.vat_percentage}
-                                    onChange={e => setData({ ...data, vat_percentage: e.target.value })}
+                                    onChange={e => setData(prev => ({ ...prev, vat_percentage: e.target.value }))}
                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                 />
                             </div>
@@ -481,10 +485,12 @@ const QuotationGenerator = () => {
                                         key={term.id}
                                         onClick={() => {
                                             const bullet = `• ${term.description}`;
-                                            const newText = data.terms_conditions
-                                                ? `${data.terms_conditions}\n${bullet}`
-                                                : bullet;
-                                            setData({ ...data, terms_conditions: newText });
+                                            setData(prev => ({
+                                                ...prev,
+                                                terms_conditions: prev.terms_conditions
+                                                    ? `${prev.terms_conditions}\n${bullet}`
+                                                    : bullet
+                                            }));
                                         }}
                                         className="w-full text-left p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-100 text-xs text-slate-700 transition"
                                     >
@@ -500,7 +506,7 @@ const QuotationGenerator = () => {
                                 <label className="block text-xs font-semibold text-slate-500 mb-1">Terms & Conditions</label>
                                 <textarea
                                     value={data.terms_conditions}
-                                    onChange={e => setData({ ...data, terms_conditions: e.target.value })}
+                                    onChange={e => setData(prev => ({ ...prev, terms_conditions: e.target.value }))}
                                     rows={6}
                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                 />

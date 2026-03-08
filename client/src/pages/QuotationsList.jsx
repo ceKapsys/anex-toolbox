@@ -177,7 +177,7 @@ const QuotationsList = () => {
                 terms_conditions: quotation.terms || '',
                 contact_details: (() => {
                     const sigs = Array.isArray(settings?.signatories) ? settings.signatories : [];
-                    const matched = sigs.find(s => s.name === quotation.contact_name);
+                    const matched = sigs.find(s => s.name?.trim().toLowerCase() === quotation.contact_name?.trim().toLowerCase());
                     return matched || {
                         name: quotation.contact_name || '',
                         designation: '',
@@ -253,7 +253,7 @@ const QuotationsList = () => {
                 terms_conditions: quotation.terms || '',
                 contact_details: (() => {
                     const sigs = Array.isArray(settings?.signatories) ? settings.signatories : [];
-                    const matched = sigs.find(s => s.name === quotation.contact_name);
+                    const matched = sigs.find(s => s.name?.trim().toLowerCase() === quotation.contact_name?.trim().toLowerCase());
                     return matched || {
                         name: quotation.contact_name || '',
                         designation: '',
