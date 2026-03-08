@@ -64,6 +64,14 @@ const toDataUrl = async (url) => {
     }
 };
 
+/** Resolve image natural dimensions from a data-URL */
+const getImageDimensions = (dataUrl) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+});
+
 // Reusable inline pdfmake layout objects
 const boxLayout = {
     hLineColor: () => C.border,
@@ -77,7 +85,7 @@ const boxLayout = {
 };
 
 // ─── Document builder ─────────────────────────────────────────────────────────
-const buildDoc = (data, headerDataUrl, footerDataUrl) => {
+const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     const {
         quotation_number,
         quotation_date,
@@ -231,6 +239,7 @@ const buildDoc = (data, headerDataUrl, footerDataUrl) => {
                 text: item.description,
                 fontSize: 8.5,
                 color: C.light,
+                alignment: 'justify',
                 margin: [0, 1, 0, 0],
             });
         }
@@ -391,42 +400,56 @@ const buildDoc = (data, headerDataUrl, footerDataUrl) => {
         });
     }
 
-    // ── Disclaimer ────────────────────────────────────────────────────────────
-    if (disclaimer) {
-        content.push({
-            text: disclaimer,
-            fontSize: 7.5,
-            color: C.light,
-            alignment: 'center',
-            margin: [H_PAD, 4, H_PAD, 0],
-        });
-    }
+    // ── Disclaimer + Footer image are rendered via pdfmake footer callback ────
+    // so they always stick to the very bottom of each page with zero gap.
 
-    // ── Footer image (full bleed, no bottom margin) ─────────────────────────
-    if (footerDataUrl) {
-        content.push({
-            image: footerDataUrl,
-            width: PAGE_W,
-            margin: [0, 0, 0, 0],
-        });
-    }
+    const footerFn = footerAreaHeight > 0 ? () => {
+        const items = [];
+        if (disclaimer) {
+            items.push({
+                text: disclaimer,
+                fontSize: 7.5,
+                color: C.light,
+                alignment: 'center',
+                margin: [H_PAD, 2, H_PAD, 0],
+            });
+        }
+        if (footerDataUrl) {
+            items.push({ image: footerDataUrl, width: PAGE_W });
+        }
+        return { stack: items, margin: [0, 0, 0, 0] };
+    } : undefined;
 
     return {
         pageSize: 'A4',
-        pageMargins: [0, 0, 0, 0],
+        pageMargins: [0, 0, 0, footerAreaHeight],
+        footer: footerFn,
         defaultStyle: { font: 'Roboto', fontSize: 10, color: C.text },
         content,
     };
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+/** Calculate the exact footer area height (disclaimer + footer image) */
+const calcFooterHeight = async (data, footerDataUrl) => {
+    let h = 0;
+    if (data.disclaimer) h += 12; // fontSize 7.5 + margin
+    if (footerDataUrl) {
+        const dims = await getImageDimensions(footerDataUrl);
+        if (dims) h += (dims.height / dims.width) * PAGE_W;
+    }
+    return h;
+};
+
 export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => {
     try {
         const [headerDataUrl, footerDataUrl] = await Promise.all([
             toDataUrl(data.header_image),
             toDataUrl(data.footer_image),
         ]);
-        const docDef = buildDoc(data, headerDataUrl, footerDataUrl);
+        const footerAreaHeight = await calcFooterHeight(data, footerDataUrl);
+        const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
         pdfMake.createPdf(docDef).download(filename);
     } catch (err) {
         console.error('pdfmake quotation generation failed:', err);
@@ -439,7 +462,8 @@ export const getQuotationPDFBlob = async (data) => {
         toDataUrl(data.header_image),
         toDataUrl(data.footer_image),
     ]);
-    const docDef = buildDoc(data, headerDataUrl, footerDataUrl);
+    const footerAreaHeight = await calcFooterHeight(data, footerDataUrl);
+    const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
     return new Promise((resolve, reject) => {
         try {
             pdfMake.createPdf(docDef).getBlob((blob) => {
