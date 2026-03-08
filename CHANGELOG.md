@@ -2,6 +2,12 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.12.2] - 2026-03-08
+
+### Fixed
+- **QuotationGenerator race condition**: Settings (header image, footer image, disclaimer, signatories) now load before quotation data so they are never overwritten with empty values when editing an existing quotation
+- **Contact details in Generator**: Existing quotation's `contact_name` is matched against signatories to populate full details (designation, phone, email)
+
 ## [3.12.1] - 2026-03-08
 
 ### Fixed

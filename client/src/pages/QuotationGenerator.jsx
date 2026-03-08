@@ -73,20 +73,21 @@ const QuotationGenerator = () => {
                 console.error(err);
             }
         };
+
+        let sigs = [];
         const loadSettings = async () => {
             try {
                 const s = await api.settings.get();
-                const sigs = Array.isArray(s.signatories) ? s.signatories : [];
+                sigs = Array.isArray(s.signatories) ? s.signatories : [];
                 setSignatories(sigs);
 
                 setData(prev => ({
                     ...prev,
                     header_image: s.quotation_header || prev.header_image,
                     footer_image: s.quotation_footer || prev.footer_image,
-                    // terms_conditions: s.terms_quote || prev.terms_conditions, // Don't overwrite if manual? actually requirements say terms come from quotation terms so start empty or default
                     disclaimer: s.quotation_disclaimer || prev.disclaimer,
                     contact_details: sigs.length > 0
-                        ? (sigs.find(s => s.name === prev.contact_details.name) || sigs[0])
+                        ? (sigs.find(sig => sig.name === prev.contact_details.name) || sigs[0])
                         : prev.contact_details
                 }));
             } catch (err) {
@@ -120,8 +121,11 @@ const QuotationGenerator = () => {
                     // Populate form with existing quotation data
                     const clientId = quotation.client_id || quotation.id;
                     setSelectedClientId(clientId);
-                    
-                    setData({
+
+                    const matchedSig = sigs.find(s => s.name === quotation.contact_name);
+
+                    setData(prev => ({
+                        ...prev,
                         quotation_number: quotation.quotation_number || '',
                         quotation_date: quotation.date || new Date().toISOString().split('T')[0],
                         valid_till_date: quotation.valid_till_date || '',
@@ -136,16 +140,9 @@ const QuotationGenerator = () => {
                         vat_amount: 0,
                         grand_total: quotation.total || 0,
                         terms_conditions: quotation.terms || '',
-                        contact_details: {
-                            name: quotation.contact_name || '',
-                            designation: '',
-                            phone: '',
-                            email: ''
-                        },
-                        header_image: '',
-                        footer_image: '',
-                        disclaimer: ''
-                    });
+                        contact_details: matchedSig || { name: quotation.contact_name || '', designation: '', phone: '', email: '' },
+                        // header_image, footer_image, disclaimer preserved from loadSettings
+                    }));
                 }
             } catch (err) {
                 console.error('Error loading quotation:', err);
@@ -153,15 +150,19 @@ const QuotationGenerator = () => {
         };
 
         loadClients();
-        loadSettings();
         loadTerms();
         loadServices();
         loadQuotations();
-        
-        // Load existing quotation if ID is provided
-        if (quotationId) {
-            loadQuotationById(quotationId);
-        }
+
+        // Settings must load first so header/footer/disclaimer/signatories
+        // are available before quotation data overlays the state
+        const initData = async () => {
+            await loadSettings();
+            if (quotationId) {
+                await loadQuotationById(quotationId);
+            }
+        };
+        initData();
     }, [quotationId]);
 
     // Set initial service type when services load
