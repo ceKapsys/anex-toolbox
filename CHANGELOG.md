@@ -2,6 +2,11 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.12.6] - 2026-03-11
+
+### Fixed
+- **Dashboard Crash on Login**: Fixed framer-motion `motion.div` import issue that caused a blank page after login
+
 ## [3.12.2] - 2026-03-08
 
 ### Fixed

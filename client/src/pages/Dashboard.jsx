@@ -83,7 +83,7 @@ const Dashboard = () => {
                     const val = inv.totals_data?.due_amount || 0;
                     return sum + (typeof val === 'number' ? val : 0);
                 }, 0);
-                
+
                 const totalReceived = invoices.reduce((sum, inv) => {
                     const val = inv.amount_paid || 0;
                     return sum + (typeof val === 'number' ? val : 0);
@@ -244,50 +244,48 @@ const Dashboard = () => {
             <div className="space-y-8">
                 {/* Top Stats Cards (Invoices) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Total Receivables Card */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-[#0f0f10] text-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.25)] relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full filter blur-3xl opacity-20 -mr-10 -mt-10"></div>
-                            <div className="relative z-10">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="p-2 bg-white/10 rounded-2xl backdrop-blur-md">
-                                        <Wallet className="w-6 h-6 text-white" />
-                                    </div>
-                                    <MoreHorizontal className="w-5 h-5 text-white/60 cursor-pointer" />
+                    {/* Total Receivables Card */}
+                    <div
+                        className="bg-[#0f0f10] text-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.25)] relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full filter blur-3xl opacity-20 -mr-10 -mt-10"></div>
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="p-2 bg-white/10 rounded-2xl backdrop-blur-md">
+                                    <Wallet className="w-6 h-6 text-white" />
                                 </div>
-                                <div>
-                                    <p className="text-white/60 text-sm mb-1">Total Receivables</p>
-                                    <h2 className="text-3xl font-semibold mb-4">{formatCurrency(stats.totalReceivables)}</h2>
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg flex items-center gap-1">
-                                            <ArrowUpRight className="w-3 h-3" /> +0.0%
-                                        </span>
-                                        <span className="text-white/60">vs last month</span>
-                                    </div>
+                                <MoreHorizontal className="w-5 h-5 text-white/60 cursor-pointer" />
+                            </div>
+                            <div>
+                                <p className="text-white/60 text-sm mb-1">Total Receivables</p>
+                                <h2 className="text-3xl font-semibold mb-4">{formatCurrency(stats.totalReceivables)}</h2>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg flex items-center gap-1">
+                                        <ArrowUpRight className="w-3 h-3" /> +0.0%
+                                    </span>
+                                    <span className="text-white/60">vs last month</span>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
+                    </div>
 
-                        {/* Total Received Card */}
-                        <StatCard
-                            title="Total Received"
-                            displayValue={formatCurrency(stats.totalReceived)}
-                            trend="+0.0%"
-                            color="green"
-                            icon={ArrowUp}
-                        />
+                    {/* Total Received Card */}
+                    <StatCard
+                        title="Total Received"
+                        displayValue={formatCurrency(stats.totalReceived)}
+                        trend="+0.0%"
+                        color="green"
+                        icon={ArrowUp}
+                    />
 
-                        {/* Payment Pending Card */}
-                        <StatCard
-                            title="Payment Pending"
-                            displayValue={formatCurrency(stats.paymentPending)}
-                            trend="+0.0%"
-                            color="orange"
-                            icon={ArrowUp}
-                        />
+                    {/* Payment Pending Card */}
+                    <StatCard
+                        title="Payment Pending"
+                        displayValue={formatCurrency(stats.paymentPending)}
+                        trend="+0.0%"
+                        color="orange"
+                        icon={ArrowUp}
+                    />
                 </div>
 
                 {/* Second Row Stats Cards */}
