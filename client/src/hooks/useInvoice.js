@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { numberToWords } from '../utils/numberToWords';
 
+const safeParse = (value, fallback) => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (!trimmed) return fallback;
+    try {
+        return JSON.parse(trimmed);
+    } catch {
+        return fallback;
+    }
+};
+
 // Get current date/time in Dhaka timezone
 const getDhakaDateTime = () => {
     const now = new Date();
@@ -74,7 +86,7 @@ const calculateDueDate = (issueDate) => {
     }).format(date);
 };
 
-export const useInvoice = () => {
+export const useInvoice = (invoiceId = null) => {
     const [saving, setSaving] = useState(false);
     const [clients, setClients] = useState([]);
     const [services, setServices] = useState([]);
@@ -137,35 +149,66 @@ export const useInvoice = () => {
                 const settingsRes = await api.get('/settings');
                 const s = settingsRes || {};
 
-                const bankDetailsArray = typeof s.bank_details === 'string'
-                    ? JSON.parse(s.bank_details || '[]')
-                    : (Array.isArray(s.bank_details) ? s.bank_details : []);
+                const parsedBanks = safeParse(s.bank_details, []);
+                const bankDetailsArray = Array.isArray(parsedBanks) ? parsedBanks : [];
 
                 setBanks(bankDetailsArray);
 
-                // Set initial data from settings
-                setData(prev => ({
-                    ...prev,
-                    company_details: typeof s.company_details === 'string'
-                        ? JSON.parse(s.company_details)
-                        : (s.company_details || prev.company_details),
-                    company_logo: s.company_logo || prev.company_logo,
+                // Set initial base details from settings
+                let initialDetails = {
+                    company_details: safeParse(s.company_details, {}),
+                    company_logo: s.company_logo || '',
                     bank_details: bankDetailsArray.length > 0
-                        ? { ...prev.bank_details, ...bankDetailsArray[0], logo: s.bank_logo || bankDetailsArray[0]?.logo }
-                        : prev.bank_details,
+                        ? { ...bankDetailsArray[0], logo: s.bank_logo || bankDetailsArray[0]?.logo }
+                        : {},
                     selected_bank_id: 0,
                     disclaimer: s.invoice_disclaimer || ''
-                }));
+                };
+
+                if (invoiceId) {
+                    const inv = await api.get(`/invoices/${invoiceId}`);
+                    if (inv) {
+                        setData(prev => ({
+                            ...prev,
+                            ...inv,
+                            ...(() => {
+                                const parsedItems = safeParse(inv.items_data, prev.items);
+                                const parsedClient = safeParse(inv.client_snapshot, prev.client);
+                                const parsedBank = safeParse(inv.bank_snapshot, initialDetails.bank_details);
+                                return {
+                                    items: Array.isArray(parsedItems) && parsedItems.length > 0 ? parsedItems : prev.items,
+                                    client: parsedClient && typeof parsedClient === 'object' ? parsedClient : prev.client,
+                                    bank_details: parsedBank && typeof parsedBank === 'object' ? parsedBank : initialDetails.bank_details,
+                                };
+                            })(),
+                            adjust_amount: inv.adjustment_amount || inv.adjust_amount || 0,
+                            adjust_note: inv.adjustment_note || inv.adjust_note || '',
+                            issue_date: inv.issue_date ? new Date(inv.issue_date).toISOString().split('T')[0] : prev.issue_date,
+                            due_date: inv.due_date ? new Date(inv.due_date).toISOString().split('T')[0] : prev.due_date,
+                        }));
+                    }
+                } else {
+                    setData(prev => ({
+                        ...prev,
+                        company_details: initialDetails.company_details || prev.company_details,
+                        company_logo: initialDetails.company_logo || prev.company_logo,
+                        bank_details: Object.keys(initialDetails.bank_details).length > 0
+                            ? { ...prev.bank_details, ...initialDetails.bank_details }
+                            : prev.bank_details,
+                        selected_bank_id: initialDetails.selected_bank_id,
+                        disclaimer: initialDetails.disclaimer || prev.disclaimer
+                    }));
+                }
             } catch (err) {
                 console.error("Error loading resources:", err);
             }
         };
         load();
-    }, []);
+    }, [invoiceId]);
 
     // Update invoice number when service changes
     useEffect(() => {
-        if (data.service_id) {
+        if (data.service_id && !invoiceId) {
             const service = services.find(s => s.id === data.service_id);
             if (service) {
                 setData(prev => ({
@@ -174,7 +217,7 @@ export const useInvoice = () => {
                 }));
             }
         }
-    }, [data.service_id, services]);
+    }, [data.service_id, services, invoiceId]);
 
     // Update terms when terms_id changes
     useEffect(() => {
@@ -310,8 +353,14 @@ export const useInvoice = () => {
                 payment_date: data.payment_date || null
             };
 
-            const response = await api.post('/invoices', payload);
-            alert('Invoice saved successfully!');
+            let response;
+            if (invoiceId) {
+                response = await api.patch(`/invoices/${invoiceId}`, payload);
+                alert('Invoice updated successfully!');
+            } else {
+                response = await api.post('/invoices', payload);
+                alert('Invoice saved successfully!');
+            }
             return response.data;
         } catch (err) {
             console.error(err);
