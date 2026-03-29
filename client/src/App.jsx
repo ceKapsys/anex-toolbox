@@ -47,8 +47,10 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="invoices" element={<InvoicesList />} />
         <Route path="invoices/new" element={<InvoiceGenerator />} />
+        <Route path="invoices/:id/edit" element={<InvoiceGenerator />} />
         <Route path="quotations" element={<QuotationsList />} />
         <Route path="quotations/new" element={<QuotationGenerator />} />
+        <Route path="quotations/:id/edit" element={<QuotationGenerator />} />
         <Route path="clients" element={<Clients />} />
         <Route path="services" element={<Services />} />
         <Route path="terms" element={<Terms />} />

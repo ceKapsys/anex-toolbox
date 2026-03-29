@@ -25,7 +25,8 @@ const QuotationsList = () => {
         try {
             const documents = await api.quotations.list();
             const data = documents.map(doc => ({
-                id: doc.$id || doc.id,
+                // Prefer numeric Prisma id; keep legacy fallback only when needed.
+                id: doc.id ?? doc.$id,
                 ...doc
             }));
             setQuotations(data || []);
@@ -419,7 +420,7 @@ const QuotationsList = () => {
                         {/* Actions */}
                         <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100 mt-auto">
                             <Link
-                                to={`/quotations/new?id=${qt.id}`}
+                                to={`/quotations/${qt.id}/edit`}
                                 className="flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium"
                             >
                                 <Edit2 className="h-3.5 w-3.5" /> Edit

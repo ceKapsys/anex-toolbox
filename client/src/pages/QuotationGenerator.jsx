@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Download, Eye, Save, ArrowLeft, Loader2 } from 'lucide-react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import QuotationTemplate from '../components/templates/QuotationTemplate';
 import { downloadQuotationPDF } from '../utils/quotationPdfMake';
 import api from '../lib/api';
@@ -8,8 +8,9 @@ import api from '../lib/api';
 const QuotationGenerator = () => {
     const templateRef = useRef();
     const navigate = useNavigate();
+    const { id: routeQuotationId } = useParams();
     const [searchParams] = useSearchParams();
-    const quotationId = searchParams.get('id');
+    const quotationId = routeQuotationId || searchParams.get('id');
     const [saving, setSaving] = useState(false);
     const [clients, setClients] = useState([]);
     const [selectedClientId, setSelectedClientId] = useState('');
@@ -62,7 +63,7 @@ const QuotationGenerator = () => {
             try {
                 const documents = await api.clients.list();
                 const clients_data = documents.map(doc => ({
-                    id: doc.$id,
+                    id: doc.id ?? doc.$id,
                     ...doc
                 }));
                 setClients(clients_data || []);
@@ -110,7 +111,7 @@ const QuotationGenerator = () => {
                 const quotation = await api.quotations.get(id);
                 if (quotation) {
                     // Populate form with existing quotation data
-                    const clientId = quotation.client_id || quotation.id;
+                    const clientId = quotation.client_id ?? '';
                     setSelectedClientId(clientId);
 
                     const matchedSig = sigs.find(s => s.name?.trim().toLowerCase() === quotation.contact_name?.trim().toLowerCase());
@@ -181,6 +182,9 @@ const QuotationGenerator = () => {
     // Auto-calculate Validity Date and Quotation Number
     useEffect(() => {
         if (!data.quotation_date) return;
+
+        // Keep persisted number/date as-is while editing an existing quotation.
+        if (quotationId) return;
 
         const date = new Date(data.quotation_date);
 

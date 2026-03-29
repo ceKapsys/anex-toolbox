@@ -72,6 +72,34 @@ const getImageDimensions = (dataUrl) => new Promise((resolve) => {
     img.src = dataUrl;
 });
 
+const quotationPdfBlobCache = new Map();
+const QUOTATION_PDF_CACHE_LIMIT = 20;
+
+const getQuotationCacheKey = (data) => JSON.stringify(data || {});
+
+const rememberQuotationBlob = (key, blob) => {
+    if (quotationPdfBlobCache.has(key)) {
+        quotationPdfBlobCache.delete(key);
+    }
+    quotationPdfBlobCache.set(key, blob);
+
+    if (quotationPdfBlobCache.size > QUOTATION_PDF_CACHE_LIMIT) {
+        const oldestKey = quotationPdfBlobCache.keys().next().value;
+        quotationPdfBlobCache.delete(oldestKey);
+    }
+};
+
+const blobToDownload = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
 // Reusable inline pdfmake layout objects
 const boxLayout = {
     hLineColor: () => C.border,
@@ -442,22 +470,7 @@ const calcFooterHeight = async (data, footerDataUrl) => {
     return h;
 };
 
-export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => {
-    try {
-        const [headerDataUrl, footerDataUrl] = await Promise.all([
-            toDataUrl(data.header_image),
-            toDataUrl(data.footer_image),
-        ]);
-        const footerAreaHeight = await calcFooterHeight(data, footerDataUrl);
-        const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
-        pdfMake.createPdf(docDef).download(filename);
-    } catch (err) {
-        console.error('pdfmake quotation generation failed:', err);
-        throw err;
-    }
-};
-
-export const getQuotationPDFBlob = async (data) => {
+const buildQuotationPDFBlob = async (data) => {
     const [headerDataUrl, footerDataUrl] = await Promise.all([
         toDataUrl(data.header_image),
         toDataUrl(data.footer_image),
@@ -473,4 +486,34 @@ export const getQuotationPDFBlob = async (data) => {
             reject(err);
         }
     });
+};
+
+export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => {
+    try {
+        const cacheKey = getQuotationCacheKey(data);
+        const cachedBlob = quotationPdfBlobCache.get(cacheKey);
+        if (cachedBlob) {
+            blobToDownload(cachedBlob, filename);
+            return;
+        }
+
+        const blob = await buildQuotationPDFBlob(data);
+        rememberQuotationBlob(cacheKey, blob);
+        blobToDownload(blob, filename);
+    } catch (err) {
+        console.error('pdfmake quotation generation failed:', err);
+        throw err;
+    }
+};
+
+export const getQuotationPDFBlob = async (data) => {
+    const cacheKey = getQuotationCacheKey(data);
+    const cachedBlob = quotationPdfBlobCache.get(cacheKey);
+    if (cachedBlob) {
+        return cachedBlob;
+    }
+
+    const blob = await buildQuotationPDFBlob(data);
+    rememberQuotationBlob(cacheKey, blob);
+    return blob;
 };

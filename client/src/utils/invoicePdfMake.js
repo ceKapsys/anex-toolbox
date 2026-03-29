@@ -86,6 +86,51 @@ const toDataUrl = async (url) => {
     }
 };
 
+const invoicePdfBlobCache = new Map();
+const INVOICE_PDF_CACHE_LIMIT = 20;
+
+const getInvoiceCacheKey = (data) => JSON.stringify(data || {});
+
+const rememberInvoiceBlob = (key, blob) => {
+    if (invoicePdfBlobCache.has(key)) {
+        invoicePdfBlobCache.delete(key);
+    }
+    invoicePdfBlobCache.set(key, blob);
+
+    if (invoicePdfBlobCache.size > INVOICE_PDF_CACHE_LIMIT) {
+        const oldestKey = invoicePdfBlobCache.keys().next().value;
+        invoicePdfBlobCache.delete(oldestKey);
+    }
+};
+
+const blobToDownload = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
+const buildInvoicePDFBlob = async (data) => {
+    const [logoUrl, bankLogoUrl] = await Promise.all([
+        toDataUrl(data.company_logo),
+        toDataUrl(data.bank_details?.logo),
+    ]);
+    const docDef = buildDoc(data, logoUrl, bankLogoUrl);
+    return new Promise((resolve, reject) => {
+        try {
+            pdfMake.createPdf(docDef).getBlob((blob) => {
+                resolve(blob);
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+};
+
 // ─── Reusable element builders ────────────────────────────────────────────────
 
 const sectionBox = (title, bodyStack, margin = [0, 0, 0, 5]) => ({
@@ -387,12 +432,16 @@ const buildDoc = (data, logoDataUrl, bankLogoDataUrl) => {
 
 export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
     try {
-        const [logoUrl, bankLogoUrl] = await Promise.all([
-            toDataUrl(data.company_logo),
-            toDataUrl(data.bank_details?.logo),
-        ]);
-        const docDef = buildDoc(data, logoUrl, bankLogoUrl);
-        pdfMake.createPdf(docDef).download(filename);
+        const cacheKey = getInvoiceCacheKey(data);
+        const cachedBlob = invoicePdfBlobCache.get(cacheKey);
+        if (cachedBlob) {
+            blobToDownload(cachedBlob, filename);
+            return;
+        }
+
+        const blob = await buildInvoicePDFBlob(data);
+        rememberInvoiceBlob(cacheKey, blob);
+        blobToDownload(blob, filename);
     } catch (err) {
         console.error('pdfmake invoice generation failed:', err);
         throw err;
@@ -400,18 +449,13 @@ export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
 };
 
 export const getInvoicePDFBlob = async (data) => {
-    const [logoUrl, bankLogoUrl] = await Promise.all([
-        toDataUrl(data.company_logo),
-        toDataUrl(data.bank_details?.logo),
-    ]);
-    const docDef = buildDoc(data, logoUrl, bankLogoUrl);
-    return new Promise((resolve, reject) => {
-        try {
-            pdfMake.createPdf(docDef).getBlob((blob) => {
-                resolve(blob);
-            });
-        } catch (err) {
-            reject(err);
-        }
-    });
+    const cacheKey = getInvoiceCacheKey(data);
+    const cachedBlob = invoicePdfBlobCache.get(cacheKey);
+    if (cachedBlob) {
+        return cachedBlob;
+    }
+
+    const blob = await buildInvoicePDFBlob(data);
+    rememberInvoiceBlob(cacheKey, blob);
+    return blob;
 };

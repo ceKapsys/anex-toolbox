@@ -1,15 +1,19 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useInvoice } from '../hooks/useInvoice';
 import InvoiceEditor from '../components/invoice/InvoiceEditor';
 import InvoicePreview from '../components/invoice/InvoicePreview';
 
 const InvoiceGenerator = () => {
+    const { id: routeInvoiceId } = useParams();
+    const [searchParams] = useSearchParams();
+    const invoiceId = routeInvoiceId || searchParams.get('id');
+
     const {
         data, clients, services, terms, banks, saving,
         updateField, updateClient, updateItem, addItem, removeItem, saveInvoice
-    } = useInvoice();
+    } = useInvoice(invoiceId);
 
     return (
         <div className="space-y-4">

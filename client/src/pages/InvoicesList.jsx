@@ -523,7 +523,7 @@ const InvoicesList = () => {
                         {/* Actions */}
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                             <Link
-                                to={`/invoices/new?id=${inv.id}`}
+                                to={`/invoices/${inv.id}/edit`}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium"
                             >
                                 <Edit2 className="h-3.5 w-3.5" /> Edit
