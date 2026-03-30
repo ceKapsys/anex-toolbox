@@ -151,13 +151,14 @@ export const useInvoice = (invoiceId = null) => {
 
                 const parsedBanks = safeParse(s.bank_details, []);
                 const bankDetailsArray = Array.isArray(parsedBanks) ? parsedBanks : [];
+                const parsedCompanyDetails = safeParse(s.company_details, {});
 
                 setBanks(bankDetailsArray);
 
                 // Set initial base details from settings
                 let initialDetails = {
-                    company_details: safeParse(s.company_details, {}),
-                    company_logo: s.company_logo || '',
+                    company_details: parsedCompanyDetails,
+                    company_logo: s.company_logo || parsedCompanyDetails?.logo || '',
                     bank_details: bankDetailsArray.length > 0
                         ? { ...bankDetailsArray[0], logo: s.bank_logo || bankDetailsArray[0]?.logo }
                         : {},

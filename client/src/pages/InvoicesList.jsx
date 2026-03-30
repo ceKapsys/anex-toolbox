@@ -188,11 +188,13 @@ const InvoicesList = () => {
                 }
             }
 
+            const companyDetails = typeof settings.company_details === 'string'
+                ? JSON.parse(settings.company_details || '{}')
+                : (settings.company_details || {});
+
             const pdfBuildData = {
-                company_details: typeof settings.company_details === 'string'
-                    ? JSON.parse(settings.company_details)
-                    : (settings.company_details || {}),
-                company_logo: settings.company_logo || '',
+                company_details: companyDetails,
+                company_logo: settings.company_logo || companyDetails.logo || '',
                 client: {
                     name: client.name || client.company || '',
                     bin: client.bin || '',
@@ -296,11 +298,13 @@ const InvoicesList = () => {
                 }
             }
 
+            const companyDetails = typeof settings.company_details === 'string'
+                ? JSON.parse(settings.company_details || '{}')
+                : (settings.company_details || {});
+
             const data = {
-                company_details: typeof settings.company_details === 'string'
-                    ? JSON.parse(settings.company_details)
-                    : (settings.company_details || {}),
-                company_logo: settings.company_logo || '',
+                company_details: companyDetails,
+                company_logo: settings.company_logo || companyDetails.logo || '',
                 client: {
                     name: client.name || client.company || '',
                     bin: client.bin || '',
