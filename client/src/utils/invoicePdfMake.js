@@ -71,7 +71,7 @@ const fmt = (n) =>
     }).format(Number(n) || 0);
 
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
-const PDF_BLOB_TIMEOUT_MS = 20000;
+const PDF_BLOB_TIMEOUT_MS = 90000;
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getApiOrigin = () => {
@@ -95,13 +95,26 @@ const normalizeAssetUrl = (url) => {
     return url;
 };
 
+const normalizeAssetValue = (value) => {
+    if (!value || typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+        return trimmed.slice(1, -1);
+    }
+    return trimmed;
+};
+
 const toDataUrl = async (url) => {
-    if (!url) return null;
-    if (url.startsWith('data:')) return url;
+    const normalizedValue = normalizeAssetValue(url);
+    if (!normalizedValue) return null;
+    if (normalizedValue.startsWith('data:')) return normalizedValue;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
-        const resolvedUrl = normalizeAssetUrl(url);
+        const resolvedUrl = normalizeAssetUrl(normalizedValue);
         const res = await fetch(resolvedUrl, {
             signal: controller.signal,
             credentials: 'include',
@@ -149,8 +162,8 @@ const blobToDownload = (blob, filename) => {
 };
 
 const buildInvoicePDFBlob = async (data) => {
-    const companyLogo = data.company_logo || data.company_details?.logo || data.company_details?.company_logo || '';
-    const bankLogo = data.bank_details?.logo || data.bank_details?.bank_logo || '';
+    const companyLogo = normalizeAssetValue(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || '');
+    const bankLogo = normalizeAssetValue(data.bank_details?.logo || data.bank_details?.bank_logo || '');
     const [logoUrl, bankLogoUrl] = await Promise.all([
         toDataUrl(companyLogo),
         toDataUrl(bankLogo),
@@ -161,7 +174,7 @@ const buildInvoicePDFBlob = async (data) => {
         const timeoutId = setTimeout(() => {
             if (settled) return;
             settled = true;
-            reject(new Error('Invoice PDF generation timed out.'));
+            reject(new Error('Invoice PDF blob generation timed out.'));
         }, PDF_BLOB_TIMEOUT_MS);
 
         try {
@@ -493,9 +506,23 @@ export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
             return;
         }
 
-        const blob = await buildInvoicePDFBlob(data);
-        rememberInvoiceBlob(cacheKey, blob);
-        blobToDownload(blob, filename);
+        try {
+            const blob = await buildInvoicePDFBlob(data);
+            rememberInvoiceBlob(cacheKey, blob);
+            blobToDownload(blob, filename);
+        } catch (err) {
+            if (String(err?.message || '').includes('blob generation timed out')) {
+                // Fallback path for browsers where getBlob callback stalls.
+                const [logoUrl, bankLogoUrl] = await Promise.all([
+                    toDataUrl(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || ''),
+                    toDataUrl(data.bank_details?.logo || data.bank_details?.bank_logo || ''),
+                ]);
+                const docDef = buildDoc(data, logoUrl, bankLogoUrl);
+                pdfMake.createPdf(docDef).download(filename);
+                return;
+            }
+            throw err;
+        }
     } catch (err) {
         console.error('pdfmake invoice generation failed:', err);
         throw err;
