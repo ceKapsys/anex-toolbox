@@ -70,11 +70,16 @@ const fmt = (n) =>
         maximumFractionDigits: 2,
     }).format(Number(n) || 0);
 
+const IMAGE_FETCH_TIMEOUT_MS = 8000;
+
 const toDataUrl = async (url) => {
     if (!url) return null;
     if (url.startsWith('data:')) return url;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) return null;
         const blob = await res.blob();
         return await new Promise((resolve) => {
             const r = new FileReader();
@@ -83,6 +88,8 @@ const toDataUrl = async (url) => {
         });
     } catch {
         return null;
+    } finally {
+        clearTimeout(timeoutId);
     }
 };
 
