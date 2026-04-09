@@ -5,7 +5,8 @@
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
     "build": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "security:hardening": "node scripts/apply_security_hardening.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
