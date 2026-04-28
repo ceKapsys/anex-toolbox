@@ -21,6 +21,29 @@ const upload = multer({
     }
 });
 
+// Conservative HTML sanitizer for outbound email bodies. Strips elements that
+// can execute code or hijack rendering (script, style, iframe, object, embed,
+// link, meta, base, form), removes inline event handlers (on*=), and disarms
+// `javascript:` URLs in href/src/action attributes.
+const sanitizeEmailHtml = (html) => {
+    if (typeof html !== 'string' || !html.trim()) return null;
+    return html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+        .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+        .replace(/<embed\b[^>]*>/gi, '')
+        .replace(/<link\b[^>]*>/gi, '')
+        .replace(/<meta\b[^>]*>/gi, '')
+        .replace(/<base\b[^>]*>/gi, '')
+        .replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '')
+        .replace(/\s+on\w+\s*=\s*'[^']*'/gi, '')
+        .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
+        .replace(/(href|src|action|formaction|xlink:href)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '$1=$2#$2')
+        .replace(/(href|src|action|formaction|xlink:href)\s*=\s*javascript:[^\s>]+/gi, '$1=#');
+};
+
 // Read SMTP config from settings DB
 const getSmtpConfig = async () => {
     const rows = await settingRepository.findAll();
@@ -85,9 +108,7 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
             });
         }
 
-        // Sanitize HTML body: strip <script> tags
-        const sanitizedBody = (body || '<p>Please find the attached invoice.</p>')
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        const sanitizedBody = sanitizeEmailHtml(body) || '<p>Please find the attached invoice.</p>';
 
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,
@@ -132,9 +153,7 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
             });
         }
 
-        // Sanitize HTML body: strip <script> tags
-        const sanitizedBody = (body || '<p>Please find the attached quotation.</p>')
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        const sanitizedBody = sanitizeEmailHtml(body) || '<p>Please find the attached quotation.</p>';
 
         const mailOptions = {
             from: `"${config.fromName}" <${config.fromEmail}>`,

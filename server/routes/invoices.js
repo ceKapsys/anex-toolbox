@@ -3,6 +3,12 @@ const router = express.Router();
 const invoiceRepository = require('../repositories/InvoiceRepository');
 const { isAuthenticated } = require('./auth');
 
+// Whitelist of statuses the API will accept on writes. Anything else is
+// rejected so an authenticated user cannot persist arbitrary status strings.
+const VALID_INVOICE_STATUSES = new Set([
+    'Draft', 'Sent', 'Submitted', 'Paid', 'Overdue', 'Cancelled'
+]);
+
 // Helper to parse JSON fields safely
 const parseJson = (row) => {
     if (!row) return row;
@@ -43,6 +49,10 @@ router.post('/', isAuthenticated, async (req, res) => {
     try {
         const d = req.body;
 
+        if (d.status !== undefined && !VALID_INVOICE_STATUSES.has(d.status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
         const data = {
             invoice_no: d.invoice_no,
             invoice_type: d.invoice_type,
@@ -81,6 +91,9 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id/status', isAuthenticated, async (req, res) => {
     try {
         const { status } = req.body;
+        if (!status || !VALID_INVOICE_STATUSES.has(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
         await invoiceRepository.update(req.params.id, { status });
         res.json({ message: 'Status updated' });
     } catch (err) {
@@ -96,14 +109,26 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
 router.patch('/:id/payment', isAuthenticated, async (req, res) => {
     try {
         const { amount_paid, vds, tds, cogs, payment_date, status } = req.body;
-        await invoiceRepository.update(req.params.id, {
-            amount_paid,
-            vds,
-            tds,
-            cogs,
-            payment_date,
-            status
-        });
+
+        if (status !== undefined && !VALID_INVOICE_STATUSES.has(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
+        // Only forward fields that were actually provided so the caller can do
+        // partial updates without inadvertently clearing untouched columns.
+        const data = {};
+        if (amount_paid !== undefined) data.amount_paid = amount_paid;
+        if (vds !== undefined) data.vds = vds;
+        if (tds !== undefined) data.tds = tds;
+        if (cogs !== undefined) data.cogs = cogs;
+        if (payment_date !== undefined) data.payment_date = payment_date;
+        if (status !== undefined) data.status = status;
+
+        if (Object.keys(data).length === 0) {
+            return res.json({ message: 'No changes provided' });
+        }
+
+        await invoiceRepository.update(req.params.id, data);
         res.json({ message: 'Payment details updated' });
     } catch (err) {
         if (err.code === 'P2025') {
@@ -118,6 +143,11 @@ router.patch('/:id/payment', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
     try {
         const d = req.body;
+
+        if (d.status !== undefined && !VALID_INVOICE_STATUSES.has(d.status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
         const data = {};
 
         if (d.invoice_no !== undefined) data.invoice_no = d.invoice_no;
