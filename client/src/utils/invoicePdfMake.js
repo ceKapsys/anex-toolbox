@@ -71,8 +71,14 @@ const fmt = (n) =>
     }).format(Number(n) || 0);
 
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
-const PDF_BLOB_TIMEOUT_MS = 90000;
+// 20 s is generous — a complex invoice typically renders in < 2 s.
+const PDF_BLOB_TIMEOUT_MS = 20000;
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Yield control to the browser so React can commit pending state updates
+// (e.g. showing the "Generating…" spinner) before the heavy synchronous PDF
+// work starts.
+const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const getApiOrigin = () => {
     if (typeof window === 'undefined') return '';
@@ -136,7 +142,21 @@ const toDataUrl = async (url) => {
 const invoicePdfBlobCache = new Map();
 const INVOICE_PDF_CACHE_LIMIT = 20;
 
-const getInvoiceCacheKey = (data) => JSON.stringify(data || {});
+// Build a cheap, stable cache key from the document's identifying fields only.
+// The original approach used JSON.stringify(data) which serialised the entire
+// data object — including company_logo, bank_details.logo and other large
+// base64 strings (potentially several hundred KB each). That synchronous
+// stringify blocked the main thread for 1–3 s every time a download was
+// triggered, before PDF generation even started.
+const getInvoiceCacheKey = (data) => [
+    data?.invoice_no ?? '',
+    data?.issue_date ?? '',
+    data?.due_date ?? '',
+    String(data?.due_amount ?? 0),
+    String(data?.adjust_amount ?? 0),
+    String((data?.items ?? []).length),
+    String((data?.items ?? []).reduce((s, i) => s + (Number(i.line_total) || 0), 0)),
+].join('|');
 
 const rememberInvoiceBlob = (key, blob) => {
     if (invoicePdfBlobCache.has(key)) {
@@ -162,6 +182,10 @@ const blobToDownload = (blob, filename) => {
 };
 
 const buildInvoicePDFBlob = async (data) => {
+    // Give the browser one tick to commit any pending React renders (e.g. the
+    // "Generating…" spinner) before the synchronous pdfmake layout engine runs.
+    await yieldToMain();
+
     const companyLogo = normalizeAssetValue(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || '');
     const bankLogo = normalizeAssetValue(data.bank_details?.logo || data.bank_details?.bank_logo || '');
     const [logoUrl, bankLogoUrl] = await Promise.all([

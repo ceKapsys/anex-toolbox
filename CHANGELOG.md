@@ -2,6 +2,42 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.13.1] - 2026-04-28
+
+### Fixed
+- **PDF download slow / frozen UI**: Resolved three combined causes that made
+  every invoice and quotation download take 1–5+ seconds with no visible
+  progress:
+
+  1. **`JSON.stringify(data)` cache key** — Both `invoicePdfMake.js` and
+     `quotationPdfMake.js` used `JSON.stringify(data)` as the in-memory cache
+     key. The `data` object contains `company_logo`, `bank_details.logo`,
+     `header_image`, and `footer_image` as base64 strings (potentially several
+     hundred KB each). Serialising these strings synchronously blocked the
+     JavaScript main thread for 1–3 s every time a download button was clicked,
+     before PDF generation had even started. Replaced with a cheap pipe-delimited
+     key built from a handful of scalar fields (invoice/quotation number, dates,
+     totals, item count).
+
+  2. **No yield to renderer** — `setGenerating(true)` was called immediately
+     before the heavy computation, but the browser never got a chance to commit
+     the render and show the "Generating…" spinner because the main thread was
+     blocked. Added `await yieldToMain()` (a `setTimeout(0)` microtask break) at
+     the start of both `buildInvoicePDFBlob` and `buildQuotationPDFBlob` so the
+     spinner renders before pdfmake starts its layout pass.
+
+  3. **No timeout on quotation PDF / 90s invoice timeout** — The quotation PDF
+     generator had no timeout at all; if pdfmake's `getBlob` callback stalled
+     the download would hang indefinitely. The invoice PDF had a 90-second
+     timeout. Both are now 20 seconds with a graceful fallback to
+     `pdfMake.createPdf(docDef).download()` if the promise-based `getBlob`
+     path times out.
+
+- **Quotation image fetch missing credentials** — `toDataUrl` in
+  `quotationPdfMake.js` did not pass `credentials: 'include'` to `fetch`,
+  unlike the invoice equivalent. Fixed for consistency; ensures assets served
+  via authenticated endpoints load correctly.
+
 ## [3.13.0] - 2026-04-28
 
 ### Security
