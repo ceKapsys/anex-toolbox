@@ -2,6 +2,23 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.13.2] - 2026-04-28
+
+### Fixed
+- **Quotation PDF header/footer images missing**: `toDataUrl` in
+  `quotationPdfMake.js` did not strip surrounding quotes from values that were
+  double-JSON-encoded when stored in settings (e.g. `'"data:image/png;..."'`).
+  The leading `"` caused `url.startsWith('data:')` to return false, so the
+  image was silently skipped. Added `normalizeAssetValue()` (identical to the
+  one already used in `invoicePdfMake.js`) and applied it before every
+  `toDataUrl` call, including the timeout fallback path.
+
+### Changed
+- **Quotation PDF item table column widths**: Narrowed the Qty (43→28),
+  Unit (53→38), and Price (69→55) columns so the Item description column
+  receives proportionally more of the available page width, reducing text
+  overflow and wrapping in item titles.
+
 ## [3.13.1] - 2026-04-28
 
 ### Fixed
