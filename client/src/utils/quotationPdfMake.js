@@ -55,15 +55,28 @@ const PDF_BLOB_TIMEOUT_MS = 20000;
 // (e.g. the "Generating…" spinner) before heavy synchronous PDF work starts.
 const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+const normalizeAssetValue = (value) => {
+    if (!value || typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+        return trimmed.slice(1, -1);
+    }
+    return trimmed;
+};
+
 const toDataUrl = async (url) => {
-    if (!url) return null;
-    if (url.startsWith('data:')) return url;
+    const normalized = normalizeAssetValue(url);
+    if (!normalized) return null;
+    if (normalized.startsWith('data:')) return normalized;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
         // credentials: 'include' ensures the session cookie is sent in case the
         // asset is served through an authenticated endpoint.
-        const res = await fetch(url, { signal: controller.signal, credentials: 'include' });
+        const res = await fetch(normalized, { signal: controller.signal, credentials: 'include' });
         if (!res.ok) return null;
         const blob = await res.blob();
         return await new Promise((resolve) => {
@@ -256,9 +269,8 @@ const buildDoc = (data, headerDataUrl, footerDataUrl, footerAreaHeight) => {
     });
 
     // ── Items Table ───────────────────────────────────────────────────────────
-    // Columns: SL 7%, Item auto, Qty 8%, Unit 10%, Price 13%, Total 13%
-    // Item uses '*' (auto-fill) so the table spans exactly CONTENT_W
-    const colW = [38, '*', 43, 53, 69, 69];
+    // Columns: SL fixed, Item auto (wider), Qty/Unit/Price narrowed to give Item more space
+    const colW = [38, '*', 28, 38, 55, 65];
 
     const thCell = (text, align = 'left') => ({
         text,
