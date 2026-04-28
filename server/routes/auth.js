@@ -126,12 +126,14 @@ router.post('/login', async (req, res) => {
         // Update last login
         await authRepository.update(user.id, { last_login: new Date() });
 
-        // Set httpOnly cookie
+        // Set httpOnly cookie (primary auth transport)
         res.cookie('session_id', sessionId, getSessionCookieOptions());
 
+        // Note: sessionId intentionally NOT returned in body — the httpOnly cookie
+        // is the source of truth. Returning it here would let JavaScript (and any
+        // XSS payload) read it, defeating the httpOnly protection.
         res.json({
             message: 'Login successful',
-            sessionId: sessionId,
             user: {
                 id: user.id,
                 username: user.username,

@@ -49,6 +49,11 @@ const fmt = (n) =>
     }).format(Number(n) || 0);
 
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
+const PDF_BLOB_TIMEOUT_MS = 20000;
+
+// Yield control to the browser so React can commit pending state updates
+// (e.g. the "Generating…" spinner) before heavy synchronous PDF work starts.
+const yieldToMain = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const toDataUrl = async (url) => {
     if (!url) return null;
@@ -56,7 +61,9 @@ const toDataUrl = async (url) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
-        const res = await fetch(url, { signal: controller.signal });
+        // credentials: 'include' ensures the session cookie is sent in case the
+        // asset is served through an authenticated endpoint.
+        const res = await fetch(url, { signal: controller.signal, credentials: 'include' });
         if (!res.ok) return null;
         const blob = await res.blob();
         return await new Promise((resolve) => {
@@ -82,7 +89,17 @@ const getImageDimensions = (dataUrl) => new Promise((resolve) => {
 const quotationPdfBlobCache = new Map();
 const QUOTATION_PDF_CACHE_LIMIT = 20;
 
-const getQuotationCacheKey = (data) => JSON.stringify(data || {});
+// Cheap, stable cache key that avoids JSON.stringify on the full data object.
+// The full data object contains header_image and footer_image as large base64
+// strings — stringifying them synchronously blocked the main thread for
+// 1–3 s before generation even started.
+const getQuotationCacheKey = (data) => [
+    data?.quotation_number ?? '',
+    data?.quotation_date ?? '',
+    String(data?.grand_total ?? 0),
+    String((data?.items ?? []).length),
+    String((data?.items ?? []).reduce((s, i) => s + (Number(i.line_total) || 0), 0)),
+].join('|');
 
 const rememberQuotationBlob = (key, blob) => {
     if (quotationPdfBlobCache.has(key)) {
@@ -478,18 +495,42 @@ const calcFooterHeight = async (data, footerDataUrl) => {
 };
 
 const buildQuotationPDFBlob = async (data) => {
+    // Yield to the browser first so any pending React renders (e.g. the
+    // "Generating…" spinner) are committed before the synchronous pdfmake
+    // layout engine takes over the main thread.
+    await yieldToMain();
+
     const [headerDataUrl, footerDataUrl] = await Promise.all([
         toDataUrl(data.header_image),
         toDataUrl(data.footer_image),
     ]);
     const footerAreaHeight = await calcFooterHeight(data, footerDataUrl);
     const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
+
     return new Promise((resolve, reject) => {
+        let settled = false;
+        const timeoutId = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            reject(new Error('Quotation PDF blob generation timed out.'));
+        }, PDF_BLOB_TIMEOUT_MS);
+
         try {
             pdfMake.createPdf(docDef).getBlob((blob) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeoutId);
+                if (!blob) {
+                    reject(new Error('Quotation PDF blob is empty.'));
+                    return;
+                }
                 resolve(blob);
             });
         } catch (err) {
+            if (!settled) {
+                settled = true;
+                clearTimeout(timeoutId);
+            }
             reject(err);
         }
     });
@@ -504,9 +545,25 @@ export const downloadQuotationPDF = async (data, filename = 'quotation.pdf') => 
             return;
         }
 
-        const blob = await buildQuotationPDFBlob(data);
-        rememberQuotationBlob(cacheKey, blob);
-        blobToDownload(blob, filename);
+        try {
+            const blob = await buildQuotationPDFBlob(data);
+            rememberQuotationBlob(cacheKey, blob);
+            blobToDownload(blob, filename);
+        } catch (err) {
+            if (String(err?.message || '').includes('timed out')) {
+                // Fallback: use pdfmake's built-in download which bypasses the
+                // getBlob callback path that occasionally stalls in some browsers.
+                const [headerDataUrl, footerDataUrl] = await Promise.all([
+                    toDataUrl(data.header_image),
+                    toDataUrl(data.footer_image),
+                ]);
+                const footerAreaHeight = await calcFooterHeight(data, footerDataUrl);
+                const docDef = buildDoc(data, headerDataUrl, footerDataUrl, footerAreaHeight);
+                pdfMake.createPdf(docDef).download(filename);
+                return;
+            }
+            throw err;
+        }
     } catch (err) {
         console.error('pdfmake quotation generation failed:', err);
         throw err;

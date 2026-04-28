@@ -45,20 +45,35 @@ const generateInvoiceNo = (service) => {
     return `INV-${shortcode}-${month}${day}${random}`;
 };
 
-// Bangladesh Government Holidays for 2026 (update yearly)
-const bangladeshHolidays2026 = [
-    '2026-02-21', // International Mother Language Day
-    '2026-03-17', // Birthday of Sheikh Mujibur Rahman
-    '2026-03-26', // Independence Day
-    '2026-04-14', // Pahela Baishakh (Bengali New Year)
-    '2026-05-01', // May Day
-    '2026-07-28', // Eid ul-Adha (approximate)
-    '2026-07-29', // Eid ul-Adha (approximate)
-    '2026-07-30', // Eid ul-Adha (approximate)
-    '2026-08-15', // National Mourning Day
-    '2026-12-16', // Victory Day
-    '2026-12-25', // Christmas Day
-];
+// Bangladesh Government Holidays keyed by year. Append new years as the
+// official BD holiday calendar is published. Eid dates depend on lunar
+// sightings and should be confirmed before each year is added.
+const bangladeshHolidaysByYear = {
+    2026: [
+        '2026-02-21', // International Mother Language Day
+        '2026-03-17', // Birthday of Sheikh Mujibur Rahman
+        '2026-03-26', // Independence Day
+        '2026-04-14', // Pahela Baishakh (Bengali New Year)
+        '2026-05-01', // May Day
+        '2026-07-28', // Eid ul-Adha (approximate)
+        '2026-07-29', // Eid ul-Adha (approximate)
+        '2026-07-30', // Eid ul-Adha (approximate)
+        '2026-08-15', // National Mourning Day
+        '2026-12-16', // Victory Day
+        '2026-12-25', // Christmas Day
+    ],
+    2027: [
+        '2027-02-21', // International Mother Language Day
+        '2027-03-17', // Birthday of Sheikh Mujibur Rahman
+        '2027-03-26', // Independence Day
+        '2027-04-14', // Pahela Baishakh (Bengali New Year)
+        '2027-05-01', // May Day
+        '2027-08-15', // National Mourning Day
+        '2027-12-16', // Victory Day
+        '2027-12-25', // Christmas Day
+        // Eid dates omitted — confirm against lunar calendar before adding.
+    ],
+};
 
 // Calculate due date - 7 working days (excluding Fri, Sat, and holidays)
 const calculateDueDate = (issueDate) => {
@@ -70,10 +85,11 @@ const calculateDueDate = (issueDate) => {
 
         const dayOfWeek = date.getDay();
         const dateString = date.toISOString().split('T')[0];
+        const yearHolidays = bangladeshHolidaysByYear[date.getFullYear()] || [];
 
         // Skip Friday (5) and Saturday (6) - Bangladesh weekend
-        // Skip government holidays
-        if (dayOfWeek !== 5 && dayOfWeek !== 6 && !bangladeshHolidays2026.includes(dateString)) {
+        // Skip government holidays for the candidate date's own year
+        if (dayOfWeek !== 5 && dayOfWeek !== 6 && !yearHolidays.includes(dateString)) {
             workingDaysAdded++;
         }
     }

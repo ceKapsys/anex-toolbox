@@ -2,6 +2,102 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.13.1] - 2026-04-28
+
+### Fixed
+- **PDF download slow / frozen UI**: Resolved three combined causes that made
+  every invoice and quotation download take 1–5+ seconds with no visible
+  progress:
+
+  1. **`JSON.stringify(data)` cache key** — Both `invoicePdfMake.js` and
+     `quotationPdfMake.js` used `JSON.stringify(data)` as the in-memory cache
+     key. The `data` object contains `company_logo`, `bank_details.logo`,
+     `header_image`, and `footer_image` as base64 strings (potentially several
+     hundred KB each). Serialising these strings synchronously blocked the
+     JavaScript main thread for 1–3 s every time a download button was clicked,
+     before PDF generation had even started. Replaced with a cheap pipe-delimited
+     key built from a handful of scalar fields (invoice/quotation number, dates,
+     totals, item count).
+
+  2. **No yield to renderer** — `setGenerating(true)` was called immediately
+     before the heavy computation, but the browser never got a chance to commit
+     the render and show the "Generating…" spinner because the main thread was
+     blocked. Added `await yieldToMain()` (a `setTimeout(0)` microtask break) at
+     the start of both `buildInvoicePDFBlob` and `buildQuotationPDFBlob` so the
+     spinner renders before pdfmake starts its layout pass.
+
+  3. **No timeout on quotation PDF / 90s invoice timeout** — The quotation PDF
+     generator had no timeout at all; if pdfmake's `getBlob` callback stalled
+     the download would hang indefinitely. The invoice PDF had a 90-second
+     timeout. Both are now 20 seconds with a graceful fallback to
+     `pdfMake.createPdf(docDef).download()` if the promise-based `getBlob`
+     path times out.
+
+- **Quotation image fetch missing credentials** — `toDataUrl` in
+  `quotationPdfMake.js` did not pass `credentials: 'include'` to `fetch`,
+  unlike the invoice equivalent. Fixed for consistency; ensures assets served
+  via authenticated endpoints load correctly.
+
+## [3.13.0] - 2026-04-28
+
+### Security
+- **Auth — httpOnly cookie now primary transport**: `AuthContext` always calls
+  `/api/auth/verify` on page load so the httpOnly session cookie is checked even
+  when no `sessionId` is present in `localStorage`. Previously, if no
+  `localStorage` entry existed the check was skipped entirely, leaving a valid
+  cookie session invisible to the app.
+- **Session token removed from login response body**: The server no longer
+  returns `sessionId` in the login JSON response. Returning it in the body
+  allowed JavaScript (and any XSS payload) to read the token, defeating the
+  httpOnly protection. The session is now carried exclusively by the httpOnly
+  cookie.
+- **localStorage sessionId removed from frontend**: `AuthContext` and `api.js`
+  no longer read or write `sessionId` to `localStorage`. All authenticated
+  requests rely on `credentials: 'include'` so the browser attaches the httpOnly
+  cookie automatically.
+- **Email HTML sanitization hardened**: The outbound email sanitizer previously
+  only stripped `<script>` tags. It now also strips `<style>`, `<iframe>`,
+  `<object>`, `<form>`, `<embed>`, `<link>`, `<meta>`, and `<base>` tags;
+  removes all inline `on*` event handler attributes; and disarms `javascript:`
+  URIs in `href`/`src`/`action` attributes.
+- **Invoice status enum validation**: `POST /api/invoices`, `PATCH /api/invoices/:id`,
+  `PATCH /api/invoices/:id/status`, and `PATCH /api/invoices/:id/payment` now
+  reject any `status` value not in the whitelist
+  `{Draft, Sent, Submitted, Paid, Overdue, Cancelled}` with a 400 error.
+- **Quotation status enum validation**: `POST /api/quotations` and
+  `PUT /api/quotations/:id` now validate `status` against
+  `{Draft, Sent, Passed, Rejected, Cancelled}`.
+- **Payment update strips undefined fields**: `PATCH /api/invoices/:id/payment`
+  previously spread all six fields unconditionally, which could overwrite stored
+  values with `undefined` in partial updates. It now only includes fields that
+  were explicitly provided in the request body.
+
+### Fixed
+- **Quotation error logging**: `POST /api/quotations` and `PUT /api/quotations/:id`
+  error handlers previously called `console.error('Quotation Create/Update Error')`
+  without attaching the error object. They now log `err.message` for
+  actionable server-side diagnostics.
+- **Dashboard StatCard color fallback**: `StatCard` color map only contained
+  `blue`, `green`, and `red`. Cards rendered with `color="orange"` or
+  `color="purple"` silently fell back to blue. Orange, amber, and purple
+  variants are now defined so the Payment Pending (orange) and Deducted AIT
+  (purple) cards render with their intended colours.
+- **Settings duplicate message banner**: The SMTP section rendered a second
+  `{message}` banner below the section header in addition to the top-of-page
+  banner, causing save/error notices to appear twice. The duplicate has been
+  removed.
+- **Invoice due-date holiday lookup applied to wrong year**: `calculateDueDate`
+  in `useInvoice.js` looked up holidays from a single `bangladeshHolidays2026`
+  array regardless of the candidate date's year. For 2027+ invoices no holidays
+  were matched (array keys are 2026-only strings). Holidays are now stored in a
+  `bangladeshHolidaysByYear` map and the correct year's list is used for each
+  candidate date. 2027 fixed holidays added; Eid dates to be added once
+  confirmed against the lunar calendar.
+- **Analytics year filter capped at 2026**: The year dropdown was hardcoded to
+  `[2024, 2025, 2026]`. It now computes dynamically as
+  `[currentYear - 2, currentYear - 1, currentYear, currentYear + 1]` so
+  it stays current without yearly manual edits.
+
 ## [3.12.6] - 2026-03-11
 
 ### Fixed

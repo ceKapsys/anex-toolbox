@@ -3,6 +3,12 @@ const router = express.Router();
 const quotationRepository = require('../repositories/QuotationRepository');
 const { isAuthenticated } = require('./auth');
 
+// Whitelist of statuses allowed on writes — rejects arbitrary user-supplied
+// strings.
+const VALID_QUOTATION_STATUSES = new Set([
+    'Draft', 'Sent', 'Passed', 'Rejected', 'Cancelled'
+]);
+
 const parseJson = (row) => {
     if (!row) return row;
     try { row.items = JSON.parse(row.items); } catch (e) { }
@@ -35,6 +41,11 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 router.post('/', isAuthenticated, async (req, res) => {
     try {
         const d = req.body;
+
+        if (d.status !== undefined && d.status !== null && !VALID_QUOTATION_STATUSES.has(d.status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
         const items = JSON.stringify(d.items || []);
 
         const data = {
@@ -59,7 +70,7 @@ router.post('/', isAuthenticated, async (req, res) => {
         const newQuotation = await quotationRepository.create(data);
         res.json({ id: newQuotation.id, message: 'Quotation Created' });
     } catch (err) {
-        console.error('Quotation Create Error');
+        console.error('Quotation create error:', err.message);
         res.status(500).json({ error: 'Failed to create quotation' });
     }
 });
@@ -67,6 +78,10 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.put('/:id', isAuthenticated, async (req, res) => {
     try {
         const d = req.body;
+
+        if (d.status !== undefined && d.status !== null && !VALID_QUOTATION_STATUSES.has(d.status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
 
         const data = {};
         if (d.quotation_number !== undefined) data.quotation_number = d.quotation_number || null;
@@ -91,10 +106,10 @@ router.put('/:id', isAuthenticated, async (req, res) => {
         await quotationRepository.update(req.params.id, data);
         res.json({ message: 'Quotation updated successfully' });
     } catch (err) {
-        console.error('Quotation Update Error');
         if (err.code === 'P2025') {
             return res.status(404).json({ error: 'Quotation not found' });
         }
+        console.error('Quotation update error:', err.message);
         res.status(500).json({ error: 'Failed to update quotation' });
     }
 });

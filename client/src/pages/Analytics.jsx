@@ -161,7 +161,10 @@ const Analytics = () => {
 
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const quarters = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
-    const years = [2024, 2025, 2026];
+    // Always include 2 years of history and 1 year ahead so the list stays
+    // current without manual updates.
+    const currentYearNow = new Date().getFullYear();
+    const years = [currentYearNow - 2, currentYearNow - 1, currentYearNow, currentYearNow + 1];
 
     const getFilterLabel = () => {
         if (timeFilter === 'month') return `${months[selectedMonth]} ${selectedYear}`;

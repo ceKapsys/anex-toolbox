@@ -1,21 +1,29 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// Authentication is carried exclusively by the httpOnly `session_id` cookie
+// (sent automatically because we use `credentials: 'include'`). Avoid storing
+// the session token anywhere JavaScript can reach — that's why we no longer
+// read or write `sessionId` to localStorage.
+
+const handleUnauthorized = () => {
+    // Avoid bouncing the login page itself into a redirect loop.
+    if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+    }
+};
+
 const request = async (endpoint, options = {}) => {
     const url = `${API_URL}${endpoint}`;
 
-    // Get session ID from localStorage (backward compatibility fallback)
-    const sessionId = localStorage.getItem('sessionId');
-
     const headers = {
         'Content-Type': 'application/json',
-        ...(sessionId && { 'x-session-id': sessionId }),
         ...options.headers,
     };
 
     const config = {
         ...options,
         headers,
-        credentials: 'include', // Send httpOnly cookies
+        credentials: 'include',
     };
 
     try {
@@ -23,10 +31,8 @@ const request = async (endpoint, options = {}) => {
         if (!response.ok) {
             const errorBody = await response.json().catch(() => ({}));
 
-            // If unauthorized, redirect to login
             if (response.status === 401) {
-                localStorage.removeItem('sessionId');
-                window.location.href = '/login';
+                handleUnauthorized();
             }
 
             throw new Error(errorBody.error || `Request failed: ${response.statusText}`);
@@ -41,22 +47,17 @@ const request = async (endpoint, options = {}) => {
 // Multipart/FormData request (for file uploads — no Content-Type header, browser sets boundary)
 const requestFormData = async (endpoint, formData) => {
     const url = `${API_URL}${endpoint}`;
-    const sessionId = localStorage.getItem('sessionId');
-    const headers = {};
-    if (sessionId) headers['x-session-id'] = sessionId;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers,
             body: formData,
-            credentials: 'include', // Send httpOnly cookies
+            credentials: 'include',
         });
         if (!response.ok) {
             const errorBody = await response.json().catch(() => ({}));
             if (response.status === 401) {
-                localStorage.removeItem('sessionId');
-                window.location.href = '/login';
+                handleUnauthorized();
             }
             throw new Error(errorBody.error || `Request failed: ${response.statusText}`);
         }

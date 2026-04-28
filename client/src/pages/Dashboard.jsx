@@ -374,7 +374,10 @@ const StatCard = ({ title, displayValue, subValue, trend, color, icon: Icon }) =
     const colorClasses = {
         blue: { bg: 'bg-blue-50', text: 'text-blue-600', iconBg: 'bg-blue-100', trendBg: 'bg-blue-100', trendText: 'text-blue-700' },
         green: { bg: 'bg-emerald-50', text: 'text-emerald-600', iconBg: 'bg-emerald-100', trendBg: 'bg-emerald-100', trendText: 'text-emerald-700' },
-        red: { bg: 'bg-rose-50', text: 'text-rose-600', iconBg: 'bg-rose-100', trendBg: 'bg-rose-100', trendText: 'text-rose-700' }
+        red: { bg: 'bg-rose-50', text: 'text-rose-600', iconBg: 'bg-rose-100', trendBg: 'bg-rose-100', trendText: 'text-rose-700' },
+        orange: { bg: 'bg-orange-50', text: 'text-orange-600', iconBg: 'bg-orange-100', trendBg: 'bg-orange-100', trendText: 'text-orange-700' },
+        amber: { bg: 'bg-amber-50', text: 'text-amber-600', iconBg: 'bg-amber-100', trendBg: 'bg-amber-100', trendText: 'text-amber-700' },
+        purple: { bg: 'bg-purple-50', text: 'text-purple-600', iconBg: 'bg-purple-100', trendBg: 'bg-purple-100', trendText: 'text-purple-700' }
     };
     const c = colorClasses[color] || colorClasses.blue;
 

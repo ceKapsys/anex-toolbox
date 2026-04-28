@@ -5,49 +5,37 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-    // Configure axios to include cookies
+    // Always include cookies on auth requests; the httpOnly session cookie is
+    // the source of truth for authentication.
     const axiosConfig = { withCredentials: true };
 
-    // Check if user is already logged in (on mount)
+    // Always check the server on mount — the httpOnly cookie is invisible to JS,
+    // so we must ask the server whether the current cookie is valid.
     useEffect(() => {
-        const storedSessionId = localStorage.getItem('sessionId');
-        if (storedSessionId) {
-            verifySession(storedSessionId);
-        } else {
-            setLoading(false);
-        }
+        verifySession();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const verifySession = async (sid) => {
+    const verifySession = async () => {
         try {
-            const headers = {};
-            if (sid) headers['x-session-id'] = sid;
+            const response = await axios.get(`${API_URL}/auth/verify`, axiosConfig);
 
-            const response = await axios.get(`${API_URL}/auth/verify`, {
-                headers,
-                ...axiosConfig
-            });
-
-            if (response.data.authenticated) {
+            if (response.data?.authenticated) {
                 setUser(response.data.user);
-                setSessionId(sid);
-                if (sid) localStorage.setItem('sessionId', sid);
             } else {
-                logout();
+                setUser(null);
             }
-        } catch (error) {
-            console.error('Session verification failed:', error);
-            // Clear stale localStorage sessionId
-            localStorage.removeItem('sessionId');
+        } catch (err) {
+            // 401 (no/expired cookie) is the normal "logged out" path — not an error
+            if (err.response?.status !== 401) {
+                console.error('Session verification failed:', err);
+            }
             setUser(null);
-            setSessionId(null);
-            setLoading(false);
         } finally {
             setLoading(false);
         }
@@ -61,14 +49,12 @@ export const AuthProvider = ({ children }) => {
                 password
             }, axiosConfig);
 
-            const { sessionId: newSessionId, user: userData } = response.data;
-            setSessionId(newSessionId);
-            setUser(userData);
-            // Keep localStorage as fallback for x-session-id header
-            localStorage.setItem('sessionId', newSessionId);
+            // Server now sets the httpOnly session cookie automatically; no token
+            // is returned in the body and nothing is stored in localStorage.
+            setUser(response.data.user);
             return { success: true };
-        } catch (error) {
-            const errorMessage = error.response?.data?.error || 'Login failed';
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || 'Login failed';
             setError(errorMessage);
             return { success: false, error: errorMessage };
         }
@@ -76,44 +62,29 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            const headers = {};
-            if (sessionId) headers['x-session-id'] = sessionId;
-
-            await axios.post(`${API_URL}/auth/logout`, {}, {
-                headers,
-                ...axiosConfig
-            });
-        } catch (error) {
-            console.error('Logout error:', error);
+            await axios.post(`${API_URL}/auth/logout`, {}, axiosConfig);
+        } catch (err) {
+            console.error('Logout error:', err);
         } finally {
             setUser(null);
-            setSessionId(null);
-            localStorage.removeItem('sessionId');
         }
     };
 
     const changePassword = async (currentPassword, newPassword) => {
         try {
-            const headers = {};
-            if (sessionId) headers['x-session-id'] = sessionId;
-
             await axios.post(`${API_URL}/auth/change-password`, {
                 currentPassword,
                 newPassword
-            }, {
-                headers,
-                ...axiosConfig
-            });
+            }, axiosConfig);
             return { success: true };
-        } catch (error) {
-            const errorMessage = error.response?.data?.error || 'Password change failed';
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || 'Password change failed';
             return { success: false, error: errorMessage };
         }
     };
 
     const value = {
         user,
-        sessionId,
         loading,
         error,
         login,
