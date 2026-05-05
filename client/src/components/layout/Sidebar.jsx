@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, FileSpreadsheet, Users, Wrench, ListChecks, Settings, BarChart3, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, FileSpreadsheet, Users, Wrench, ListChecks, Settings, BarChart3, HardDrive, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { version } from '../../../package.json';
@@ -17,6 +17,7 @@ const Sidebar = () => {
         { to: '/services', icon: Wrench, label: 'Services' },
         { to: '/terms', icon: ListChecks, label: 'Terms' },
         { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+        { to: '/backup', icon: HardDrive, label: 'Backup' },
         { to: '/settings', icon: Settings, label: 'Settings' },
     ];
 
