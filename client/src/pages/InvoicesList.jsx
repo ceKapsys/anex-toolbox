@@ -488,7 +488,7 @@ const InvoicesList = () => {
             {/* Invoice Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredInvoices.map((inv) => (
-                    <div key={inv.id} className="bg-white rounded-xl border border-red-500 p-5 hover:shadow-md transition">
+                    <div key={inv.id} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 min-w-0">
@@ -602,7 +602,7 @@ const StatCard = ({ title, count, amount, icon: Icon, color, formatCurrency }) =
     const c = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className="bg-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-2 rounded-2xl ${c.iconBg}`}>
                     <Icon className={`w-5 h-5 ${c.text}`} />

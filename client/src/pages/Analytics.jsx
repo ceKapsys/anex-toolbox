@@ -190,7 +190,7 @@ const Analytics = () => {
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-2xl border border-red-500 flex flex-wrap gap-4 items-center">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-slate-400" />
                     <span className="text-sm font-medium text-slate-600">Time:</span>
@@ -281,15 +281,15 @@ const Analytics = () => {
                     <MetricCard title="Net Profit" value="" subtitle={formatCurrency(invoiceMetrics.paidAmount - invoiceMetrics.cogs)} icon={BarChart3} color="purple" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-5 rounded-2xl border border-red-500">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100">
                         <p className="text-sm text-slate-500 mb-1">VAT Deducted</p>
                         <p className="text-xl font-semibold text-red-600">{formatCurrency(invoiceMetrics.vds)}</p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-red-500">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100">
                         <p className="text-sm text-slate-500 mb-1">AIT Deducted</p>
                         <p className="text-xl font-semibold text-purple-600">{formatCurrency(invoiceMetrics.tds)}</p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-red-500">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100">
                         <p className="text-sm text-slate-500 mb-1">COGS</p>
                         <p className="text-xl font-semibold text-slate-700">{formatCurrency(invoiceMetrics.cogs)}</p>
                     </div>
@@ -313,7 +313,7 @@ const Analytics = () => {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Service Demand Chart */}
-                <section className="bg-white p-6 rounded-2xl border border-red-500">
+                <section className="bg-white p-6 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-2 mb-4">
                         <Briefcase className="h-5 w-5 text-blue-600" />
                         <h3 className="text-lg font-semibold text-slate-800">Service Demand</h3>
@@ -345,7 +345,7 @@ const Analytics = () => {
                 </section>
 
                 {/* Most Quoted Clients Chart */}
-                <section className="bg-white p-6 rounded-2xl border border-red-500">
+                <section className="bg-white p-6 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-2 mb-4">
                         <Users className="h-5 w-5 text-emerald-600" />
                         <h3 className="text-lg font-semibold text-slate-800">Most Quoted Clients</h3>
@@ -378,7 +378,7 @@ const Analytics = () => {
             </div>
 
             {/* On-Time Payment Section */}
-            <section className="bg-white p-6 rounded-2xl border border-red-500">
+            <section className="bg-white p-6 rounded-2xl border border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
                     <Clock className="h-5 w-5 text-green-600" />
                     <h3 className="text-lg font-semibold text-slate-800">Payment Timeliness</h3>
@@ -414,7 +414,7 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color }) => {
     const c = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-red-500 hover:shadow-md transition">
+        <div className="bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-md transition">
             <div className="flex items-start justify-between mb-3">
                 <div className={`p-2 rounded-xl ${c.iconBg}`}>
                     <Icon className={`h-5 w-5 ${c.iconText}`} />

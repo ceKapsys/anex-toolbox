@@ -6,7 +6,7 @@ const { isAuthenticated } = require('./auth');
 // Whitelist of statuses allowed on writes — rejects arbitrary user-supplied
 // strings.
 const VALID_QUOTATION_STATUSES = new Set([
-    'Draft', 'Sent', 'Passed', 'Rejected', 'Cancelled'
+    'Draft', 'In Process', 'Sent', 'Passed', 'Rejected', 'Cancelled'
 ]);
 
 const parseJson = (row) => {
