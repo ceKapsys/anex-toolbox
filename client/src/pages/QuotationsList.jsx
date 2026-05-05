@@ -20,6 +20,7 @@ const QuotationsList = () => {
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
     const [settings, setSettings] = useState(null);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const loadQuotations = async () => {
         try {
@@ -202,13 +203,17 @@ const QuotationsList = () => {
             formData.append('pdf', pdfBlob, `${quotationNumber}.pdf`);
 
             await api.email.sendQuotation(formData);
-            alert('Quotation sent successfully!');
-            setMailModal({ isOpen: false, quotation: null });
+            showToast(`Quotation ${quotationNumber} sent successfully!`);
             await loadQuotations();
         } catch (err) {
             console.error('Failed to send quotation email:', err);
             throw err;
         }
+    };
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
     };
 
     const openMailModal = (quotation) => {
@@ -511,6 +516,12 @@ const QuotationsList = () => {
                 defaultSubject={settings?.quotation_mail_subject || ''}
                 defaultBody={settings?.quotation_mail_template || ''}
             />
+
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                    {toast.msg}
+                </div>
+            )}
         </div>
     );
 };

@@ -44,6 +44,8 @@ const sanitizeEmailHtml = (html) => {
         .replace(/(href|src|action|formaction|xlink:href)\s*=\s*javascript:[^\s>]+/gi, '$1=#');
 };
 
+const isValidEmail = (addr) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addr);
+
 // Read SMTP config from settings DB
 const getSmtpConfig = async () => {
     const rows = await settingRepository.findAll();
@@ -92,6 +94,12 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
         if (!invoice_id || !to) {
             return res.status(400).json({ error: 'Invoice ID and recipient email are required' });
         }
+        if (!isValidEmail(to)) {
+            return res.status(400).json({ error: 'Invalid recipient email address' });
+        }
+        if (cc && !isValidEmail(cc)) {
+            return res.status(400).json({ error: 'Invalid CC email address' });
+        }
 
         const invoice = await invoiceRepository.findById(invoice_id);
         if (!invoice) {
@@ -120,7 +128,7 @@ router.post('/send-invoice', isAuthenticated, upload.single('pdf'), async (req, 
         };
 
         await transporter.sendMail(mailOptions);
-        await invoiceRepository.update(invoice_id, { status: 'Sent' });
+        await invoiceRepository.update(invoice_id, { status: 'Sent', updated_at: new Date() });
 
         res.json({ message: 'Invoice sent successfully', invoice_no: invoice.invoice_no });
     } catch (error) {
@@ -136,6 +144,12 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
 
         if (!quotation_id || !to) {
             return res.status(400).json({ error: 'Quotation ID and recipient email are required' });
+        }
+        if (!isValidEmail(to)) {
+            return res.status(400).json({ error: 'Invalid recipient email address' });
+        }
+        if (cc && !isValidEmail(cc)) {
+            return res.status(400).json({ error: 'Invalid CC email address' });
         }
 
         const quotation = await quotationRepository.findById(quotation_id);
@@ -165,7 +179,7 @@ router.post('/send-quotation', isAuthenticated, upload.single('pdf'), async (req
         };
 
         await transporter.sendMail(mailOptions);
-        await quotationRepository.update(quotation_id, { status: 'Sent' });
+        await quotationRepository.update(quotation_id, { status: 'Sent', updated_at: new Date() });
 
         res.json({ message: 'Quotation sent successfully' });
     } catch (error) {

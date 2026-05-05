@@ -128,6 +128,7 @@ const InvoicesList = () => {
     const [paymentModal, setPaymentModal] = useState({ isOpen: false, invoice: null });
     const [mailModal, setMailModal] = useState({ isOpen: false, invoice: null });
     const [settings, setSettings] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const loadInvoices = async () => {
         try {
@@ -167,6 +168,9 @@ const InvoicesList = () => {
     };
 
     const handleSendEmail = async (mailData) => {
+        if (!settings) {
+            throw new Error('Settings not loaded. Please refresh the page and try again.');
+        }
         const invoice = mailModal.invoice;
             const items = invoice.items_data || [];
             const totals = invoice.totals_data || {};
@@ -234,9 +238,13 @@ const InvoicesList = () => {
             formData.append('pdf', pdfBlob, `${invoice.invoice_no || 'invoice'}.pdf`);
 
             await api.email.sendInvoice(formData);
-            alert('Invoice sent successfully!');
-            setMailModal({ isOpen: false, invoice: null });
+            showToast(`Invoice ${invoice.invoice_no} sent successfully!`);
             await loadInvoices();
+    };
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
     };
 
     const openMailModal = (invoice) => {
@@ -587,6 +595,12 @@ const InvoicesList = () => {
                 defaultSubject={settings?.invoice_mail_subject || ''}
                 defaultBody={settings?.invoice_mail_template || ''}
             />
+
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                    {toast.msg}
+                </div>
+            )}
         </div>
     );
 };
