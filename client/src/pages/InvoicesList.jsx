@@ -128,6 +128,7 @@ const InvoicesList = () => {
     const [paymentModal, setPaymentModal] = useState({ isOpen: false, invoice: null });
     const [mailModal, setMailModal] = useState({ isOpen: false, invoice: null });
     const [settings, setSettings] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const loadInvoices = async () => {
         try {
@@ -167,6 +168,9 @@ const InvoicesList = () => {
     };
 
     const handleSendEmail = async (mailData) => {
+        if (!settings) {
+            throw new Error('Settings not loaded. Please refresh the page and try again.');
+        }
         const invoice = mailModal.invoice;
             const items = invoice.items_data || [];
             const totals = invoice.totals_data || {};
@@ -234,9 +238,13 @@ const InvoicesList = () => {
             formData.append('pdf', pdfBlob, `${invoice.invoice_no || 'invoice'}.pdf`);
 
             await api.email.sendInvoice(formData);
-            alert('Invoice sent successfully!');
-            setMailModal({ isOpen: false, invoice: null });
+            showToast(`Invoice ${invoice.invoice_no} sent successfully!`);
             await loadInvoices();
+    };
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
     };
 
     const openMailModal = (invoice) => {
@@ -488,7 +496,7 @@ const InvoicesList = () => {
             {/* Invoice Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredInvoices.map((inv) => (
-                    <div key={inv.id} className="bg-white rounded-xl border border-red-500 p-5 hover:shadow-md transition">
+                    <div key={inv.id} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 min-w-0">
@@ -587,6 +595,12 @@ const InvoicesList = () => {
                 defaultSubject={settings?.invoice_mail_subject || ''}
                 defaultBody={settings?.invoice_mail_template || ''}
             />
+
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                    {toast.msg}
+                </div>
+            )}
         </div>
     );
 };
@@ -602,7 +616,7 @@ const StatCard = ({ title, count, amount, icon: Icon, color, formatCurrency }) =
     const c = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className="bg-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-2 rounded-2xl ${c.iconBg}`}>
                     <Icon className={`w-5 h-5 ${c.text}`} />

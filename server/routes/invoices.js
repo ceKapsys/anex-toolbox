@@ -94,7 +94,7 @@ router.patch('/:id/status', isAuthenticated, async (req, res) => {
         if (!status || !VALID_INVOICE_STATUSES.has(status)) {
             return res.status(400).json({ error: 'Invalid status value' });
         }
-        await invoiceRepository.update(req.params.id, { status });
+        await invoiceRepository.update(req.params.id, { status, updated_at: new Date() });
         res.json({ message: 'Status updated' });
     } catch (err) {
         if (err.code === 'P2025') {
@@ -128,6 +128,7 @@ router.patch('/:id/payment', isAuthenticated, async (req, res) => {
             return res.json({ message: 'No changes provided' });
         }
 
+        data.updated_at = new Date();
         await invoiceRepository.update(req.params.id, data);
         res.json({ message: 'Payment details updated' });
     } catch (err) {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
     Bell,
-    Search,
     ChevronDown,
     MoreHorizontal,
     ArrowUpRight,
@@ -29,6 +29,7 @@ import {
 import api from '../lib/api';
 
 const Dashboard = () => {
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         totalInvoices: 0,
         totalReceivables: 0,
@@ -165,35 +166,25 @@ const Dashboard = () => {
     return (
         <div className="min-h-full px-10 py-8 space-y-8">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="relative w-full max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <input
-                        type="text"
-                        placeholder="Search for anything..."
-                        className="w-full rounded-full bg-white px-12 py-3 text-sm text-slate-600 shadow-[0_10px_30px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-slate-200"
-                    />
-                </div>
-                <div className="flex items-center gap-4">
-                    <button className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-400 shadow-[0_8px_24px_rgba(15,23,42,0.08)] hover:text-slate-600 transition">
-                        <Bell className="w-6 h-6" />
-                        <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                    </button>
-                    <div className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-xs">AB</div>
-                        <div className="hidden md:block">
-                            <p className="text-sm font-semibold text-slate-800">Admin User</p>
-                            <p className="text-xs text-slate-400">Super Admin</p>
-                        </div>
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
+            <div className="flex items-center justify-end gap-4">
+                <div className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-xs">
+                        {user?.full_name
+                            ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                            : user?.username?.slice(0, 2).toUpperCase() || 'AU'}
                     </div>
+                    <div className="hidden md:block">
+                        <p className="text-sm font-semibold text-slate-800">{user?.full_name || user?.username || 'Admin'}</p>
+                        <p className="text-xs text-slate-400">{user?.email || 'Administrator'}</p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
                 </div>
             </div>
 
             {/* Quick Action Cards Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Last Quotation Card */}
-                <div className="bg-[#ff6b35] text-white p-6 rounded-[28px] border border-red-500 shadow-[0_18px_40px_rgba(255,107,53,0.35)]">
+                <div className="bg-[#ff6b35] text-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(255,107,53,0.35)]">
                     <div className="flex items-center gap-2 mb-3">
                         <FileText className="w-5 h-5" />
                         <span className="text-sm font-medium text-white/80">Last Quotation</span>
@@ -208,7 +199,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Last Invoice Card */}
-                <div className="bg-[#3b82f6] text-white p-6 rounded-[28px] border border-red-500 shadow-[0_18px_40px_rgba(59,130,246,0.35)]">
+                <div className="bg-[#3b82f6] text-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(59,130,246,0.35)]">
                     <div className="flex items-center gap-2 mb-3">
                         <Receipt className="w-5 h-5" />
                         <span className="text-sm font-medium text-white/80">Last Invoice</span>
@@ -225,7 +216,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Last Client Card */}
-                <div className="bg-[#10b981] text-white p-6 rounded-[28px] border border-red-500 shadow-[0_18px_40px_rgba(16,185,129,0.35)]">
+                <div className="bg-[#10b981] text-white p-6 rounded-[28px] shadow-[0_18px_40px_rgba(16,185,129,0.35)]">
                     <div className="flex items-center gap-2 mb-3">
                         <UserPlus className="w-5 h-5" />
                         <span className="text-sm font-medium text-white/80">Last Client</span>
@@ -382,7 +373,7 @@ const StatCard = ({ title, displayValue, subValue, trend, color, icon: Icon }) =
     const c = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className="bg-white p-6 rounded-[28px] border border-red-500 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition">
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-2 rounded-2xl ${c.iconBg}`}>
                     <Icon className={`w-5 h-5 ${c.text}`} />

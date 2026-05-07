@@ -20,6 +20,7 @@ model Client {
   attn        String?
   created_at  DateTime @default(now())
 
+  @@index([name])
   @@map("clients")
 }
 
@@ -52,6 +53,9 @@ model Invoice {
   created_at        DateTime @default(now())
   updated_at        DateTime @default(now())
 
+  @@index([client_id])
+  @@index([status])
+  @@index([issue_date])
   @@map("invoices")
 }
 
@@ -74,7 +78,11 @@ model Quotation {
   status            String?  @default("Draft")
   work_order_number String?
   created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
 
+  @@index([client_id])
+  @@index([status])
+  @@index([date])
   @@map("quotations")
 }
 

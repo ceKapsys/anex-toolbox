@@ -68,6 +68,30 @@ const requestFormData = async (endpoint, formData) => {
     }
 };
 
+// Fetch a backup endpoint and save the response as a file download.
+// Uses fetch directly so we can read the Content-Disposition header and
+// trigger a save without losing the auth cookie.
+const downloadBackup = async (endpoint) => {
+    const url = `${API_URL}${endpoint}`;
+    const response = await fetch(url, { credentials: 'include' });
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Download failed: ${response.statusText}`);
+    }
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : `backup-${Date.now()}.json`;
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+};
+
 const api = {
     // Generic methods for hooks
     get: (endpoint) => request(endpoint, { method: 'GET' }),
@@ -118,7 +142,13 @@ const api = {
         sendInvoice: (formData) => requestFormData('/email/send-invoice', formData),
         sendQuotation: (formData) => requestFormData('/email/send-quotation', formData),
         testSMTP: () => request('/email/test-smtp', { method: 'POST', body: JSON.stringify({}) }),
-    }
+    },
+    backup: {
+        downloadInvoices: () => downloadBackup('/backup/invoices'),
+        downloadQuotations: () => downloadBackup('/backup/quotations'),
+        restoreInvoices: (formData) => requestFormData('/backup/invoices/restore', formData),
+        restoreQuotations: (formData) => requestFormData('/backup/quotations/restore', formData),
+    },
 };
 
 export default api;

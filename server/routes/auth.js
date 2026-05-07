@@ -46,10 +46,9 @@ const validatePasswordStrength = (password) => {
     return null;
 };
 
-// Middleware to check if user is authenticated
-// Reads session from httpOnly cookie first, falls back to x-session-id header for backward compatibility
+// Middleware to check if user is authenticated via httpOnly session cookie
 const isAuthenticated = async (req, res, next) => {
-    const sessionId = req.cookies?.session_id || req.headers['x-session-id'];
+    const sessionId = req.cookies?.session_id;
 
     if (!sessionId) {
         return res.status(401).json({ error: 'Authentication required' });

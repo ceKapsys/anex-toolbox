@@ -2,6 +2,35 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.14.0] - 2026-05-05
+
+### Added
+- **Backup & Restore page** (`/backup`): New dedicated page with export and import panels for invoices and quotations
+- **JSON backup export**: `GET /api/backup/invoices` and `GET /api/backup/quotations` — download all records as a dated JSON file via `Content-Disposition` attachment
+- **JSON backup restore**: `POST /api/backup/invoices/restore` and `POST /api/backup/quotations/restore` — upload a JSON backup to re-import records; existing records (matched by `invoice_no` / `quotation_number`) are automatically skipped to prevent duplicates
+- **`downloadBackup` API helper** (`api.js`): Fetch-based helper that reads `Content-Disposition` filename, converts the response to a Blob, and triggers a browser save dialog without losing the auth cookie
+- **`BackupPanel` UI component**: Self-contained panel with download section, drag-and-drop-style file picker, import button, and clear button; supports blue (invoices) and emerald (quotations) colour variants
+- **`ResultBanner` UI component**: Inline success/error banner showing imported/skipped counts and per-record error details (up to 10 shown)
+- **Backup nav item**: "Backup" entry (HardDrive icon) added to the sidebar between Analytics and Settings
+
+### Fixed
+- **`border-red-500` debug borders removed**: All leftover red debug borders replaced with `border-slate-100` across Dashboard quick-action cards, `StatCard` components, InvoicesList cards, QuotationsList cards, and Analytics section cards
+- **Dashboard hardcoded user info**: "Admin User" / "AB" placeholder replaced with real name/initials/email pulled from `useAuth()`; non-functional search bar removed from the header
+- **`'In Process'` status rejected (400)**: Added `'In Process'` to `VALID_QUOTATION_STATUSES` on the backend — selecting this status from the QuotationsList dropdown previously returned a silent HTTP 400 error
+- **Terms & Services missing required-field validation**: `POST` and `PATCH` routes for `/api/terms` and `/api/services` now return HTTP 400 when `name` (terms) or `name`/`shortcode` (services) are blank
+- **`updated_at` not refreshed on invoice status/payment changes**: `PATCH /api/invoices/:id/status` and `PATCH /api/invoices/:id/payment` now set `updated_at: new Date()` so records reflect when they were last modified
+- **`updated_at` not set after email send**: `send-invoice` and `send-quotation` email routes now include `updated_at: new Date()` when updating the document status to `'Sent'`
+- **`handleSendEmail` crash when settings unloaded**: Added null guard (`if (!settings) throw new Error(...)`) matching the existing guard on `handleDownload`; prevents a crash on page load race condition
+- **`alert()` popups replaced with toast notifications**: Success and error feedback in InvoicesList and QuotationsList now uses a non-blocking bottom-right toast instead of `window.alert()`
+
+### Security
+- **Removed `x-session-id` header fallback**: `isAuthenticated` middleware previously accepted the session token via either the httpOnly cookie or an `x-session-id` request header; the header path is JS-accessible and defeats cookie isolation. No code in the codebase sends that header, so the fallback has been removed
+- **Server-side email address validation**: `POST /api/email/send-invoice` and `POST /api/email/send-quotation` now validate `to` and `cc` with a regex check and return HTTP 400 for malformed addresses before attempting SMTP delivery
+
+### Schema
+- **`Quotation.updated_at` field added**: The `Quotation` model was missing `updated_at` (unlike `Invoice`); added as `DateTime @default(now())`
+- **Database indexes added**: `@@index([name])` on `Client`; `@@index([client_id])`, `@@index([status])`, `@@index([issue_date])` on `Invoice`; `@@index([client_id])`, `@@index([status])`, `@@index([date])` on `Quotation` — reduces query time on all heavily filtered list endpoints
+
 ## [3.13.2] - 2026-04-28
 
 ### Fixed

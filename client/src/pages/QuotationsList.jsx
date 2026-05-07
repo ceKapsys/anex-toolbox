@@ -20,6 +20,7 @@ const QuotationsList = () => {
     const [mailModal, setMailModal] = useState({ isOpen: false, quotation: null });
     const [settings, setSettings] = useState(null);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const loadQuotations = async () => {
         try {
@@ -202,13 +203,17 @@ const QuotationsList = () => {
             formData.append('pdf', pdfBlob, `${quotationNumber}.pdf`);
 
             await api.email.sendQuotation(formData);
-            alert('Quotation sent successfully!');
-            setMailModal({ isOpen: false, quotation: null });
+            showToast(`Quotation ${quotationNumber} sent successfully!`);
             await loadQuotations();
         } catch (err) {
             console.error('Failed to send quotation email:', err);
             throw err;
         }
+    };
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
     };
 
     const openMailModal = (quotation) => {
@@ -379,7 +384,7 @@ const QuotationsList = () => {
             {/* Quotation Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredQuotations.map((qt) => (
-                    <div key={qt.id} className="bg-white rounded-xl border border-red-500 p-5 hover:shadow-md transition flex flex-col">
+                    <div key={qt.id} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-md transition flex flex-col">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 min-w-0">
@@ -511,6 +516,12 @@ const QuotationsList = () => {
                 defaultSubject={settings?.quotation_mail_subject || ''}
                 defaultBody={settings?.quotation_mail_template || ''}
             />
+
+            {toast && (
+                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                    {toast.msg}
+                </div>
+            )}
         </div>
     );
 };
@@ -524,7 +535,7 @@ const StatCard = ({ title, count, amount, icon: Icon, color, formatCurrency }) =
     const c = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className="bg-white p-6 rounded-[28px] border border-red-500 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition flex flex-col">
+        <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_50px_rgba(15,23,42,0.08)] transition flex flex-col">
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-2 rounded-2xl ${c.iconBg}`}>
                     <Icon className={`w-5 h-5 ${c.text}`} />

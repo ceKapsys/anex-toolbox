@@ -76,6 +76,7 @@ app.use('/api/services', servicesRoutes);
 app.use('/api/terms', termsRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/quotation-terms', require('./routes/quotation_terms'));
+app.use('/api/backup', require('./routes/backup'));
 
 // Health check (minimal info)
 app.get('/api/health', (req, res) => {

@@ -12,6 +12,7 @@ import Services from './pages/Services';
 import Terms from './pages/Terms';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
+import Backup from './pages/Backup';
 import Login from './pages/Login';
 
 // Protected Route wrapper
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="services" element={<Services />} />
         <Route path="terms" element={<Terms />} />
         <Route path="analytics" element={<Analytics />} />
+        <Route path="backup" element={<Backup />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

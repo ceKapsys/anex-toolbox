@@ -32,6 +32,9 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 router.post('/', isAuthenticated, async (req, res) => {
     try {
         const { name, description, type } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Term name is required' });
+        }
         const newTerm = await termRepository.create({
             name,
             description,
@@ -48,6 +51,9 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
     try {
         const { name, description, type } = req.body;
+        if (name !== undefined && (!name || !name.trim())) {
+            return res.status(400).json({ error: 'Term name cannot be empty' });
+        }
         await termRepository.update(req.params.id, { name, description, type });
         res.json({ message: 'Term updated' });
     } catch (err) {

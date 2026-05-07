@@ -32,6 +32,12 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 router.post('/', isAuthenticated, async (req, res) => {
     try {
         const { name, description, shortcode } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Service name is required' });
+        }
+        if (!shortcode || !shortcode.trim()) {
+            return res.status(400).json({ error: 'Service shortcode is required' });
+        }
         const newService = await serviceRepository.create({ name, description, shortcode });
         res.json({ id: newService.id, message: 'Service created' });
     } catch (err) {
@@ -44,6 +50,12 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
     try {
         const { name, description, shortcode } = req.body;
+        if (name !== undefined && (!name || !name.trim())) {
+            return res.status(400).json({ error: 'Service name cannot be empty' });
+        }
+        if (shortcode !== undefined && (!shortcode || !shortcode.trim())) {
+            return res.status(400).json({ error: 'Service shortcode cannot be empty' });
+        }
         await serviceRepository.update(req.params.id, { name, description, shortcode });
         res.json({ message: 'Service updated' });
     } catch (err) {
