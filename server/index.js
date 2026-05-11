@@ -5,7 +5,9 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
+const { runMigrations } = require('./lib/migrate');
 
+runMigrations().catch((err) => console.error('Migration error:', err.message));
 
 const app = express();
 const PORT = process.env.PORT || 5000;
