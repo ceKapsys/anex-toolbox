@@ -20,6 +20,9 @@ model Client {
   attn        String?
   created_at  DateTime @default(now())
 
+  invoices   Invoice[]
+  quotations Quotation[]
+
   @@index([name])
   @@map("clients")
 }
@@ -53,6 +56,10 @@ model Invoice {
   created_at        DateTime @default(now())
   updated_at        DateTime @default(now())
 
+  client  Client?  @relation(fields: [client_id], references: [id], onDelete: Restrict)
+  service Service? @relation(fields: [service_id], references: [id], onDelete: Restrict)
+  term    Term?    @relation(fields: [terms_id], references: [id], onDelete: SetNull)
+
   @@index([client_id])
   @@index([status])
   @@index([issue_date])
@@ -80,6 +87,8 @@ model Quotation {
   created_at        DateTime @default(now())
   updated_at        DateTime @default(now())
 
+  client Client? @relation(fields: [client_id], references: [id], onDelete: Restrict)
+
   @@index([client_id])
   @@index([status])
   @@index([date])
@@ -93,6 +102,8 @@ model Service {
   shortcode   String   @unique
   created_at  DateTime @default(now())
 
+  invoices Invoice[]
+
   @@map("services")
 }
 
@@ -102,6 +113,8 @@ model Term {
   name        String
   description String?
   created_at  DateTime @default(now())
+
+  invoices Invoice[]
 
   @@map("terms")
 }
