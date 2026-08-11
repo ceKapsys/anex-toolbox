@@ -2,6 +2,11 @@
 
 All notable changes to ANEX App are documented in this file.
 
+## [3.14.1] - 2026-08-11
+
+### Fixed
+- **Company/bank logo missing on downloaded invoice PDF**: The on-screen invoice preview renders logos with an HTML `<img>`, which accepts any image format, but pdfmake can only embed **PNG and JPEG** through its `image` node. Logos uploaded in Settings (stored as data URLs) in another format — WEBP, GIF, SVG, AVIF — showed in the preview yet silently dropped from, or broke generation of, the downloaded PDF. Both the company logo and the bank logo are now re-encoded to PNG via an offscreen canvas before being handed to pdfmake, and any conversion failure falls back gracefully to no logo instead of aborting the download (`invoicePdfMake.js`)
+
 ## [3.14.0] - 2026-05-05
 
 ### Added
