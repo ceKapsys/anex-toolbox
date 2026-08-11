@@ -139,6 +139,50 @@ const toDataUrl = async (url) => {
     }
 };
 
+// pdfmake can only embed PNG and JPEG raster images through the `image` node.
+// Logos uploaded in Settings are stored as data URLs in whatever format the
+// user picked (WEBP, GIF, SVG, AVIF, …). Those render fine in the on-screen
+// HTML <img> preview but pdfmake rejects them, so the logo silently vanishes
+// from — or breaks generation of — the downloaded PDF. Re-encode anything that
+// isn't already PNG/JPEG to PNG via an offscreen canvas so pdfmake accepts it.
+const PDF_SUPPORTED_IMAGE_RE = /^data:image\/(png|jpe?g)[;,]/i;
+
+const toPdfImageDataUrl = async (url) => {
+    const dataUrl = await toDataUrl(url);
+    if (!dataUrl) return null;
+    if (PDF_SUPPORTED_IMAGE_RE.test(dataUrl)) return dataUrl;
+    if (typeof document === 'undefined' || typeof Image === 'undefined') return null;
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const width = img.naturalWidth || img.width;
+                const height = img.naturalHeight || img.height;
+                if (!width || !height) {
+                    resolve(null);
+                    return;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    resolve(null);
+                    return;
+                }
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } catch {
+                // toDataURL throws on a tainted canvas or unsupported source.
+                resolve(null);
+            }
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+    });
+};
+
 const invoicePdfBlobCache = new Map();
 const INVOICE_PDF_CACHE_LIMIT = 20;
 
@@ -189,8 +233,8 @@ const buildInvoicePDFBlob = async (data) => {
     const companyLogo = normalizeAssetValue(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || '');
     const bankLogo = normalizeAssetValue(data.bank_details?.logo || data.bank_details?.bank_logo || '');
     const [logoUrl, bankLogoUrl] = await Promise.all([
-        toDataUrl(companyLogo),
-        toDataUrl(bankLogo),
+        toPdfImageDataUrl(companyLogo),
+        toPdfImageDataUrl(bankLogo),
     ]);
     const docDef = buildDoc(data, logoUrl, bankLogoUrl);
     return new Promise((resolve, reject) => {
@@ -538,8 +582,8 @@ export const downloadInvoicePDF = async (data, filename = 'invoice.pdf') => {
             if (String(err?.message || '').includes('blob generation timed out')) {
                 // Fallback path for browsers where getBlob callback stalls.
                 const [logoUrl, bankLogoUrl] = await Promise.all([
-                    toDataUrl(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || ''),
-                    toDataUrl(data.bank_details?.logo || data.bank_details?.bank_logo || ''),
+                    toPdfImageDataUrl(data.company_logo || data.company_details?.logo || data.company_details?.company_logo || ''),
+                    toPdfImageDataUrl(data.bank_details?.logo || data.bank_details?.bank_logo || ''),
                 ]);
                 const docDef = buildDoc(data, logoUrl, bankLogoUrl);
                 pdfMake.createPdf(docDef).download(filename);
