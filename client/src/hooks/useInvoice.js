@@ -130,7 +130,7 @@ export const useInvoice = (invoiceId = null) => {
         adjust_amount: 0,
         adjust_note: '',
         amount_in_words: '',
-        company_details: { name: 'ANEX Business Solutions', bin: '123456789', address: 'Dhaka, Bangladesh' },
+        company_details: { name: '', bin: '', address: '' },
         company_logo: '',
         bank_details: { bank: '', ac_name: '', ac_no: '', routing: '', logo: '' },
         selected_bank_id: null,
@@ -167,7 +167,10 @@ export const useInvoice = (invoiceId = null) => {
 
                 const parsedBanks = safeParse(s.bank_details, []);
                 const bankDetailsArray = Array.isArray(parsedBanks) ? parsedBanks : [];
-                const parsedCompanyDetails = safeParse(s.company_details, {});
+                const parsedCompanyDetailsRaw = safeParse(s.company_details, {});
+                const parsedCompanyDetails = parsedCompanyDetailsRaw && typeof parsedCompanyDetailsRaw === 'object'
+                    ? parsedCompanyDetailsRaw
+                    : {};
 
                 setBanks(bankDetailsArray);
 
@@ -188,6 +191,10 @@ export const useInvoice = (invoiceId = null) => {
                         setData(prev => ({
                             ...prev,
                             ...inv,
+                            // Invoices don't snapshot seller info, so always take it from Settings
+                            company_details: { ...prev.company_details, ...initialDetails.company_details },
+                            company_logo: initialDetails.company_logo || prev.company_logo,
+                            disclaimer: initialDetails.disclaimer || prev.disclaimer,
                             ...(() => {
                                 const parsedItems = safeParse(inv.items_data, prev.items);
                                 const parsedClient = safeParse(inv.client_snapshot, prev.client);
@@ -207,7 +214,7 @@ export const useInvoice = (invoiceId = null) => {
                 } else {
                     setData(prev => ({
                         ...prev,
-                        company_details: initialDetails.company_details || prev.company_details,
+                        company_details: { ...prev.company_details, ...initialDetails.company_details },
                         company_logo: initialDetails.company_logo || prev.company_logo,
                         bank_details: Object.keys(initialDetails.bank_details).length > 0
                             ? { ...prev.bank_details, ...initialDetails.bank_details }
