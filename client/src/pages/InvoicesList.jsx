@@ -5,7 +5,7 @@ import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
 import { downloadInvoicePDF, getInvoicePDFBlob } from '../utils/invoicePdfMake';
 import { numberToWords } from '../utils/numberToWords';
-import { buildInvoiceSummary, downloadInvoiceSummary } from '../utils/invoiceSummaryExport';
+import { buildInvoiceSummary, downloadInvoiceSummary, listInvoiceClients } from '../utils/invoiceSummaryExport';
 
 const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -131,18 +131,32 @@ const SummaryExportModal = ({ isOpen, invoices, onClose, formatCurrency }) => {
     const [fromMonth, setFromMonth] = useState(currentMonthValue);
     const [toMonth, setToMonth] = useState(currentMonthValue);
     const [includeDrafts, setIncludeDrafts] = useState(false);
+    const [selectedClients, setSelectedClients] = useState([]); // empty = all clients
+    const [clientSearch, setClientSearch] = useState('');
 
     if (!isOpen) return null;
 
+    const clients = listInvoiceClients(invoices);
+    const visibleClients = clientSearch
+        ? clients.filter(c => c.key.includes(clientSearch.toLowerCase().trim()))
+        : clients;
+
+    const toggleClient = (key) => {
+        setSelectedClients(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
+
     const summary = fromMonth && toMonth
-        ? buildInvoiceSummary(invoices, fromMonth, toMonth, { includeDrafts })
+        ? buildInvoiceSummary(invoices, fromMonth, toMonth, { includeDrafts, clientKeys: selectedClients })
         : null;
-    const hasRows = summary && summary.rows.length > 0;
+    const hasRows = summary && summary.months.length > 0;
 
     const handleDownload = (e) => {
         e.preventDefault();
         if (!hasRows) return;
-        downloadInvoiceSummary(summary);
+        const clientLabel = selectedClients.length === 1
+            ? clients.find(c => c.key === selectedClients[0])?.name
+            : undefined;
+        downloadInvoiceSummary(summary, { clientLabel });
         onClose();
     };
 
@@ -180,6 +194,46 @@ const SummaryExportModal = ({ isOpen, invoices, onClose, formatCurrency }) => {
                         </div>
                     </div>
 
+                    <div>
+                        <div className="flex items-center justify-between">
+                            <label className="block text-sm font-medium text-slate-700">Clients</label>
+                            <span className="text-xs text-slate-500">
+                                {selectedClients.length === 0 ? 'All clients' : `${selectedClients.length} selected`}
+                                {selectedClients.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedClients([])}
+                                        className="ml-2 font-medium text-slate-700 hover:underline"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </span>
+                        </div>
+                        <input
+                            type="text"
+                            value={clientSearch}
+                            onChange={(e) => setClientSearch(e.target.value)}
+                            placeholder="Search clients..."
+                            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        />
+                        <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                            {visibleClients.length === 0 ? (
+                                <p className="px-1 py-1 text-sm text-slate-400">No clients found.</p>
+                            ) : visibleClients.map(c => (
+                                <label key={c.key} className="flex items-center gap-2 rounded-md px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedClients.includes(c.key)}
+                                        onChange={() => toggleClient(c.key)}
+                                        className="rounded border-slate-300"
+                                    />
+                                    <span className="truncate">{c.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
                     <label className="flex items-center gap-2 text-sm text-slate-600">
                         <input
                             type="checkbox"
@@ -192,14 +246,17 @@ const SummaryExportModal = ({ isOpen, invoices, onClose, formatCurrency }) => {
 
                     <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
                         {hasRows ? (
-                            <>
-                                <p>
-                                    {summary.totals.invoiceCount} invoice(s) across {summary.rows.length} client(s)
-                                </p>
-                                <p className="mt-1">
-                                    Receivable: <span className="font-semibold text-slate-900">{formatCurrency(summary.totals.receivableAmount)}</span>
-                                </p>
-                            </>
+                            <div className="space-y-1">
+                                {summary.months.map(g => (
+                                    <div key={g.month} className="flex items-center justify-between gap-3">
+                                        <span>
+                                            {g.label} <span className="text-slate-400">· {g.totals.invoiceCount} invoice(s)</span>
+                                        </span>
+                                        <span className="font-semibold text-slate-900">{formatCurrency(g.totals.receivableAmount)}</span>
+                                    </div>
+                                ))}
+                                <p className="pt-1 text-xs text-slate-400">Receivable amount per month</p>
+                            </div>
                         ) : (
                             <p>No invoices found in the selected period.</p>
                         )}
