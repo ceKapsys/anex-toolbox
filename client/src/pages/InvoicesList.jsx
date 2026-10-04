@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, Download, Trash2, Edit2, X, Search, Send, FileText, DollarSign, CheckCircle, Loader2, FileSpreadsheet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import SendMailModal from '../components/email/SendMailModal';
 import { downloadInvoicePDF, getInvoicePDFBlob } from '../utils/invoicePdfMake';
 import { numberToWords } from '../utils/numberToWords';
+import { buildInvoiceSummary, downloadInvoiceSummary } from '../utils/invoiceSummaryExport';
 
 const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -121,6 +122,111 @@ const PaymentModal = ({ isOpen, invoice, onClose, onSave }) => {
     );
 };
 
+const currentMonthValue = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const SummaryExportModal = ({ isOpen, invoices, onClose, formatCurrency }) => {
+    const [fromMonth, setFromMonth] = useState(currentMonthValue);
+    const [toMonth, setToMonth] = useState(currentMonthValue);
+    const [includeDrafts, setIncludeDrafts] = useState(false);
+
+    if (!isOpen) return null;
+
+    const summary = fromMonth && toMonth
+        ? buildInvoiceSummary(invoices, fromMonth, toMonth, { includeDrafts })
+        : null;
+    const hasRows = summary && summary.rows.length > 0;
+
+    const handleDownload = (e) => {
+        e.preventDefault();
+        if (!hasRows) return;
+        downloadInvoiceSummary(summary);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-slate-900">Download Invoice Summary</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleDownload} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">From Month</label>
+                            <input
+                                type="month"
+                                value={fromMonth}
+                                onChange={(e) => setFromMonth(e.target.value)}
+                                required
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">To Month</label>
+                            <input
+                                type="month"
+                                value={toMonth}
+                                onChange={(e) => setToMonth(e.target.value)}
+                                required
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                            />
+                        </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                        <input
+                            type="checkbox"
+                            checked={includeDrafts}
+                            onChange={(e) => setIncludeDrafts(e.target.checked)}
+                            className="rounded border-slate-300"
+                        />
+                        Include draft invoices
+                    </label>
+
+                    <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        {hasRows ? (
+                            <>
+                                <p>
+                                    {summary.totals.invoiceCount} invoice(s) across {summary.rows.length} client(s)
+                                </p>
+                                <p className="mt-1">
+                                    Receivable: <span className="font-semibold text-slate-900">{formatCurrency(summary.totals.receivableAmount)}</span>
+                                </p>
+                            </>
+                        ) : (
+                            <p>No invoices found in the selected period.</p>
+                        )}
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!hasRows}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f0f10] px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                        >
+                            <Download className="h-4 w-4" /> Download CSV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const InvoicesList = () => {
     const [invoices, setInvoices] = useState([]);
     const [filter, setFilter] = useState('All');
@@ -129,6 +235,7 @@ const InvoicesList = () => {
     const [mailModal, setMailModal] = useState({ isOpen: false, invoice: null });
     const [settings, setSettings] = useState(null);
     const [toast, setToast] = useState(null);
+    const [summaryModalOpen, setSummaryModalOpen] = useState(false);
 
     const loadInvoices = async () => {
         try {
@@ -416,9 +523,17 @@ const InvoicesList = () => {
                     <h1 className="text-2xl font-semibold text-slate-900">Invoices</h1>
                     <p className="text-sm text-slate-500">Track, manage, and analyze invoices.</p>
                 </div>
-                <Link to="/invoices/new" className="inline-flex items-center gap-2 rounded-full bg-[#0f0f10] px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-                    <Plus className="h-4 w-4" /> New Invoice
-                </Link>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setSummaryModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        <FileSpreadsheet className="h-4 w-4" /> Download Summary
+                    </button>
+                    <Link to="/invoices/new" className="inline-flex items-center gap-2 rounded-full bg-[#0f0f10] px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                        <Plus className="h-4 w-4" /> New Invoice
+                    </Link>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -583,6 +698,13 @@ const InvoicesList = () => {
                 invoice={paymentModal.invoice}
                 onClose={() => setPaymentModal({ isOpen: false, invoice: null })}
                 onSave={handleSavePayment}
+            />
+
+            <SummaryExportModal
+                isOpen={summaryModalOpen}
+                invoices={invoices}
+                onClose={() => setSummaryModalOpen(false)}
+                formatCurrency={formatCurrency}
             />
 
             <SendMailModal
